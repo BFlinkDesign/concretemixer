@@ -21,6 +21,16 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - **330° Swivel**: Precision placement capability
 - **Portable Design**: Flat-free tires, lightweight frame (145 lbs)
 
+## Design Requirements (Optimized Version)
+
+| Requirement | Specification | Rationale |
+|-------------|---------------|-----------|
+| **Duty Cycle** | 12+ hours/day continuous | Jobsite commercial operation |
+| **Primary Power** | 120V AC | Unlimited runtime, standard outlet |
+| **Secondary Power** | DeWalt 20V/60V FlexVolt | Portable runs (1.5-3 hr) |
+| **Finger Material** | Steel (not UHMW) | 12-hr thermal exceeds UHMW limits |
+| **Thermal Management** | Active cooling required | Electronics need ventilation |
+
 ## Documentation Structure
 
 ### Core Documentation (`docs/`)
@@ -28,6 +38,7 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - [Main Assemblies](./docs/ASSEMBLIES.md) - Frame, hopper, chute, drive system
 - [Auger Design](./docs/AUGER_DESIGN.md) - Shaftless auger geometry and principles
 - [Water System](./docs/WATER_SYSTEM.md) - Spray nozzle and flow control
+- [**Power System**](./docs/POWER_SYSTEM.md) - ⚡ Dual power: 120V AC + DeWalt FlexVolt
 - [Bill of Materials](./docs/BOM.md) - Component list for replication
 - [Engineering Calculations](./docs/ENGINEERING.md) - Design calculations and principles
 - [**Data Requirements**](./docs/DATA_REQUIREMENTS.md) - ⚠️ Known vs unknown specs, critical gaps
