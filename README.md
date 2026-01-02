@@ -23,12 +23,23 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 
 ## Documentation Structure
 
+### Core Documentation (`docs/`)
 - [Technical Specifications](./docs/SPECIFICATIONS.md) - Dimensions, power, capacity
 - [Main Assemblies](./docs/ASSEMBLIES.md) - Frame, hopper, chute, drive system
 - [Auger Design](./docs/AUGER_DESIGN.md) - Shaftless auger geometry and principles
 - [Water System](./docs/WATER_SYSTEM.md) - Spray nozzle and flow control
 - [Bill of Materials](./docs/BOM.md) - Component list for replication
 - [Engineering Calculations](./docs/ENGINEERING.md) - Design calculations and principles
+- [**Data Requirements**](./docs/DATA_REQUIREMENTS.md) - ⚠️ Known vs unknown specs, critical gaps
+
+### Technical Drawings (`drawings/`)
+- [Assembly Drawing](./drawings/ASSEMBLY_DRAWING.md) - Side/front/top views
+- [Auger Drawing](./drawings/AUGER_DRAWING.md) - Shaftless auger geometry
+- [Electrical Schematic](./drawings/ELECTRICAL_SCHEMATIC.md) - Drive system wiring
+
+### Computational Tools (`src/`)
+- [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework
+- [requirements.txt](./src/requirements.txt) - Python dependencies
 
 ## Operation Principle
 
@@ -52,6 +63,29 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - **Throughput**: 45+ bags (80 lb) per hour
 - **Output Rate**: ~1 cubic yard per hour
 - **Mix Rate**: ~1 bag (60 lb) per minute
+
+## Key Confirmed Specifications
+
+| Parameter | Value | Source |
+|-----------|-------|--------|
+| Max Aggregate Size | **0.5 inch** | MudMixer Specs |
+| Motor Coupling | **Left-Hand Acme Thread** | Patent 10,259,140 |
+| Hopper P/D Ratio | 0.2 - 0.9 (preferred 0.5-0.8) | Patent Claims |
+| Chute P/D Ratio | 0.6 - 1.0 | Patent Claims |
+| Chute Length | 16 - 30 inches | Patent Claims |
+
+## Critical Unknown Dimensions
+
+> ⚠️ **The following must be measured before replication:**
+
+| Parameter | Impact | Acquisition Method |
+|-----------|--------|-------------------|
+| Housing Internal Diameter | Clearance calculation, CFD | Bore gauge |
+| Auger Outer Diameter | Clearance, flow rate | Caliper |
+| Acme Thread Size | Motor coupling adapter | Thread gauge |
+| Bearing Specifications | Load path analysis | Disassembly |
+
+See [DATA_REQUIREMENTS.md](./docs/DATA_REQUIREMENTS.md) for complete analysis.
 
 ## Patents Referenced
 

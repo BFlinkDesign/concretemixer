@@ -4,6 +4,70 @@
 
 This document covers the engineering principles, calculations, and design considerations for replicating a MudMixer-style continuous concrete mixer.
 
+> **⚠️ IMPORTANT**: See [DATA_REQUIREMENTS.md](./DATA_REQUIREMENTS.md) for critical unknown dimensions
+> that must be measured before manufacturing.
+
+---
+
+## 0. CONFIRMED CONSTRAINTS (from Patents & Specs)
+
+These are **hard constraints** that bound all design calculations:
+
+| Constraint | Value | Source | Impact |
+|------------|-------|--------|--------|
+| **Max Aggregate Size** | 0.5" (12.7mm) | MudMixer Specs | Defines minimum clearance gap |
+| **Motor Coupling** | Left-Hand Acme Thread | Patent 10,259,140 | Prevents auger unscrewing during rotation |
+| **Hopper P/D Ratio** | 0.2 - 0.9 | Patent 10,259,140 | Controls intake rate |
+| **Chute P/D Ratio** | 0.6 - 1.0 | Patent 11,285,639 | Optimizes conveyance |
+| **Chute Length** | 16-30 inches | Patent 10,259,140 | Defines mixing zone |
+| **Chute Angle** | -5° to +30° | Patent 10,259,140 | Gravity-assisted flow |
+| **Max Lift Height** | < 42 inches | Patent 11,285,639 | Ergonomic loading |
+
+### Motor Shaft Interface Detail
+
+```
+CONFIRMED: Left-Hand Acme Thread Coupling
+
+    Motor shaft ─────┐
+                     │
+              ╔══════╧══════╗
+              ║   ACME      ║
+              ║   THREAD    ║  ← Left-hand thread prevents
+              ║   (LH)      ║    loosening during forward rotation
+              ╚══════╤══════╝
+                     │
+    Auger ───────────┘
+
+    Likely sizes (needs verification):
+    • 1/2"-10 LH Acme
+    • 5/8"-8 LH Acme
+    • 3/4"-6 LH Acme
+```
+
+### Aggregate Clearance Requirement
+
+```
+CRITICAL: Housing-to-Auger Clearance
+
+    Given: Max aggregate = 0.5"
+    Required: Clearance ≥ 1.2 × aggregate = 0.6"
+
+    ┌─────────────────────────────────────────┐
+    │          HOUSING (ID unknown)           │
+    │                                         │
+    │  ╔═══════════════════════════════════╗  │
+    │  ║         AUGER (OD unknown)        ║  │
+    │  ╚═══════════════════════════════════╝  │
+    │                                         │
+    │◄─►                                 ◄───►│
+    │ GAP                                 GAP │
+    │ ≥0.6"                              ≥0.6"│
+    └─────────────────────────────────────────┘
+
+    If gap < 0.6": Aggregate WILL jam
+    If gap > 1.5": Shear efficiency drops significantly
+```
+
 ---
 
 ## 1. Mixing Capacity Calculations
@@ -372,3 +436,74 @@ Concrete is highly abrasive (silica aggregate). Expected wear:
 | Water flow | 0.6-0.8 GPM | |
 | Total capacity | 27 ft³/hr | 1 yd³/hr |
 | Operating weight | ~500 lbs | Fully loaded |
+
+---
+
+## 11. Computational Design Framework
+
+For advanced optimization and simulation, see the Python framework in `/src/`:
+
+### Auger Optimizer (`src/auger_optimizer.py`)
+
+```python
+from auger_optimizer import AugerOptimizer, OperatingConditions
+
+# Initialize with measured housing ID
+conditions = OperatingConditions(
+    motor_power_hp=0.5,
+    motor_rpm=27,
+    max_aggregate_size=0.5,  # CONFIRMED
+)
+
+optimizer = AugerOptimizer(housing_id=6.0, conditions=conditions)
+
+# Generate optimized design
+design = optimizer.generate_optimized_design()
+
+# Run analyses
+clearance = optimizer.calculate_clearance(auger_od=5.5)
+shear = optimizer.calculate_finger_shear(fingers)
+skeleton = optimizer.calculate_skeleton_diameter()
+```
+
+### CFD Simulation Parameters
+
+For computational fluid dynamics simulation of concrete flow:
+
+```python
+from auger_optimizer import CFDParameters
+
+cfd = CFDParameters(
+    slump_inches=4.0,        # Target slump
+    water_cement_ratio=0.5,  # w/c ratio
+)
+
+params = cfd.generate_cfd_setup()
+# Returns Bingham Plastic model parameters:
+# - Yield stress: ~1800 Pa (for 4" slump)
+# - Plastic viscosity: ~30 Pa·s
+```
+
+### Key Computational Outputs
+
+| Analysis | Purpose | Input Required |
+|----------|---------|----------------|
+| Clearance | Validate aggregate won't jam | Housing ID, Auger OD |
+| Finger Shear | Ensure fingers break aggregate | Motor torque, finger specs |
+| Skeleton Sizing | Minimum SS wire diameter | Motor torque |
+| Thermal Rise | Verify material won't overheat | Runtime, finger material |
+
+---
+
+## 12. Data Gaps Blocking Full Analysis
+
+The following analyses **cannot be completed** without measured data:
+
+| Analysis | Missing Data | Acquisition Method |
+|----------|--------------|-------------------|
+| FEA (Finite Element) | Bearing locations, fits | Disassembly measurement |
+| CFD (Fluid Dynamics) | Exact housing ID, auger geometry | Bore gauge, caliper |
+| Wear Life Prediction | Material hardness values | Hardness testing |
+| Fatigue Life | Weld details, stress concentrations | Destructive testing |
+
+**See [DATA_REQUIREMENTS.md](./DATA_REQUIREMENTS.md) for complete gap analysis.**
