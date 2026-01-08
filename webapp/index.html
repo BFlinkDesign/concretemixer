@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConcreteMixer Digital Twin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Container -->
+    <div id="app">
+        <!-- Header Bar -->
+        <header class="header-bar">
+            <div class="logo">
+                <span class="logo-icon">◆</span>
+                <span class="logo-text">CONCRETE<span class="highlight">MIXER</span></span>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-label">THROUGHPUT</span>
+                    <span class="stat-value" id="bags-per-hour">0</span>
+                    <span class="stat-unit">bags/hr</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">MOTOR</span>
+                    <span class="stat-value" id="motor-load">0</span>
+                    <span class="stat-unit">%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">W/C</span>
+                    <span class="stat-value" id="wc-ratio">0.00</span>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="btn-icon" id="btn-fullscreen" title="Fullscreen">⛶</button>
+            </div>
+        </header>
+
+        <!-- 3D Viewport -->
+        <div id="viewport">
+            <div id="viewer-canvas"></div>
+
+            <!-- Viewport Controls -->
+            <div class="viewport-controls">
+                <button class="view-btn active" data-view="iso">3D</button>
+                <button class="view-btn" data-view="front">FRONT</button>
+                <button class="view-btn" data-view="side">SIDE</button>
+                <button class="view-btn" data-view="top">TOP</button>
+            </div>
+
+            <!-- Explode Slider -->
+            <div class="explode-control">
+                <div class="explode-label">ASSEMBLY VIEW</div>
+                <div class="explode-slider-container">
+                    <input type="range" id="explode-slider" min="0" max="1" step="0.01" value="0">
+                </div>
+                <div class="explode-indicators">
+                    <span>ASSEMBLED</span>
+                    <span id="explode-value">0%</span>
+                    <span>EXPLODED</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Left Panel - Product Selector -->
+        <aside class="panel panel-left">
+            <div class="panel-header">
+                <h2>PRODUCT SELECT</h2>
+            </div>
+
+            <div class="panel-content">
+                <!-- Brand Selector -->
+                <div class="selector-group">
+                    <label class="selector-label">BRAND</label>
+                    <div class="brand-selector">
+                        <button class="brand-btn active" data-brand="quikrete">
+                            <span class="brand-name">QUIKRETE</span>
+                        </button>
+                        <button class="brand-btn" data-brand="sakrete">
+                            <span class="brand-name">SAKRETE</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product Cards Grid -->
+                <div class="selector-group">
+                    <label class="selector-label">PRODUCT TYPE</label>
+                    <div class="product-grid" id="product-grid">
+                        <!-- Dynamically populated by app.js -->
+                    </div>
+                </div>
+
+                <!-- Bag Size Selector -->
+                <div class="selector-group">
+                    <label class="selector-label">BAG SIZE</label>
+                    <div class="bag-selector" id="bag-size-selector">
+                        <!-- Dynamically populated by app.js -->
+                    </div>
+                </div>
+
+                <!-- Selected Product Display -->
+                <div class="product-info" id="selected-product-display">
+                    <div class="selected-brand">Select a product</div>
+                    <div class="selected-name">--</div>
+                    <div class="selected-details">--</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Panel - Simulation Controls -->
+        <aside class="panel panel-right">
+            <div class="panel-header">
+                <h2>SIMULATION</h2>
+            </div>
+
+            <div class="panel-content">
+                <!-- Motor Control -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-title">MOTOR CONTROL</span>
+                    </div>
+                    <div class="motor-control">
+                        <button class="motor-btn" id="motor-toggle">START</button>
+                        <div class="motor-status" id="motor-status">STOPPED</div>
+                    </div>
+                    <div class="rpm-control">
+                        <label>RPM Target</label>
+                        <input type="range" id="rpm-slider" min="0" max="30" value="27">
+                        <span class="rpm-display" id="rpm-display">0</span>
+                    </div>
+                </div>
+
+                <!-- Water Control -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-title">WATER FLOW</span>
+                    </div>
+                    <div class="water-control">
+                        <label>Dial Setting</label>
+                        <input type="range" id="water-dial" min="0" max="100" value="50">
+                        <span class="dial-value" id="water-dial-value">50%</span>
+                        <div class="optimal-indicator" id="optimal-dial" title="Optimal setting"></div>
+                    </div>
+                    <div class="pressure-control">
+                        <label>Supply Pressure</label>
+                        <input type="range" id="water-pressure" min="20" max="60" value="40">
+                        <span class="pressure-value" id="pressure-value">40 PSI</span>
+                    </div>
+                    <div class="water-stats">
+                        <div class="water-stat">
+                            <span class="ws-label">Flow Rate</span>
+                            <span class="ws-value" id="water-flow">0.00 GPM</span>
+                        </div>
+                        <div class="water-stat">
+                            <span class="ws-label">Target W/C</span>
+                            <span class="ws-value" id="target-wc">0.50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gauges -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-title">POWER OUTPUT</span>
+                    </div>
+                    <div class="gauge-row">
+                        <div class="gauge" id="torque-gauge">
+                            <div class="gauge-label">TORQUE (ft-lb)</div>
+                            <div class="gauge-bar">
+                                <div class="gauge-fill"></div>
+                            </div>
+                            <div class="gauge-value">0.0</div>
+                        </div>
+                        <div class="gauge" id="power-gauge">
+                            <div class="gauge-label">POWER (HP)</div>
+                            <div class="gauge-bar">
+                                <div class="gauge-fill"></div>
+                            </div>
+                            <div class="gauge-value">0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Physics Readouts -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <span class="control-title">MIXING ANALYSIS</span>
+                    </div>
+                    <div class="physics-readouts">
+                        <div class="readout-row">
+                            <span class="ro-label">Residence Time</span>
+                            <span class="ro-value" id="residence-time">0.0s</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="ro-label">Mix Intensity</span>
+                            <span class="ro-value" id="mix-intensity">0%</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="ro-label">Homogeneity</span>
+                            <span class="ro-value" id="homogeneity">0.0%</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="ro-label">Shear Rate</span>
+                            <span class="ro-value" id="shear-rate">0.0 /s</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="ro-label">Shear Stress</span>
+                            <span class="ro-value" id="shear-stress">0 Pa</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="ro-label">Mass Flow</span>
+                            <span class="ro-value" id="mass-flow">0.00 kg/min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Bottom Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span class="status-item">
+                    <span class="status-indicator inactive" id="status-motor"></span>
+                    MOTOR
+                </span>
+                <span class="status-item">
+                    <span class="status-indicator inactive" id="status-water"></span>
+                    WATER
+                </span>
+                <span class="status-item">
+                    <span class="status-indicator inactive" id="status-mix"></span>
+                    MIX
+                </span>
+                <span class="status-item">
+                    <span class="status-indicator inactive" id="status-wc"></span>
+                    W/C
+                </span>
+            </div>
+            <div class="status-center">
+                4" OD AUGER | 5" HOUSING | 0.52" CLEARANCE
+            </div>
+            <div class="status-right">
+                <span class="status-item">v1.0 DIGITAL TWIN</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/viewer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
