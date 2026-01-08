@@ -202,13 +202,17 @@ For shaftless augers handling abrasive materials like concrete:
 4. **Flexibility**: Shaftless design requires inherent rigidity
 
 ### Intended Materials (Bagged Concrete Products)
-| Product Type | Typical Aggregate | Max Size |
-|--------------|-------------------|----------|
-| Sakrete Concrete Mix | Gravel/sand | 3/8" - 1/2" |
-| Quikrete Concrete Mix | Gravel/sand | 3/8" - 1/2" |
-| Mortar Mix | Sand only | Fine |
-| Sand Mix | Sand only | Fine |
-| Fast-Setting Concrete | Gravel/sand | 3/8" |
+
+| Product Category | Examples | Aggregate | Max Size | Auger Compatibility |
+|------------------|----------|-----------|----------|---------------------|
+| **Standard Concrete** | Quikrete 1101, Sakrete Concrete Mix | Portland cement + sand + gravel | 3/8" - 1/2" | ✅ Ideal |
+| **High-Strength Concrete** | Quikrete 5000, Sakrete High-Strength | Portland cement + sand + gravel | 3/8" - 1/2" | ✅ Ideal |
+| **Fast-Setting Concrete** | Quikrete 1004, Sakrete Fast-Setting | Rapid-set cement + sand + gravel | 3/8" | ✅ Good (short working time) |
+| **Mortar Mix** | Type S, Type N mortars | Masonry sand only | Fine | ✅ Excellent |
+| **Sand Mix** | Sakrete Sand Mix, Quikrete Topping | Portland cement + fine sand | Fine | ✅ Excellent |
+| **Grout** | Non-shrink grouts | Fine aggregate | Fine | ⚠️ Use flowable consistency |
+
+**Note**: All bagged products from Sakrete and Quikrete use aggregates ≤1/2", well within the 4" auger design capacity.
 
 ---
 

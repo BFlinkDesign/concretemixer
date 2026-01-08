@@ -13,6 +13,69 @@ This concrete mixer is specifically designed for **bagged concrete mix products*
 
 These bagged products have controlled aggregate sizes (typically ≤ 1/2") and pre-proportioned cement/aggregate ratios, making them ideal for continuous auger mixing.
 
+### Compatible Bagged Products - Detailed Specifications
+
+#### Concrete Mixes (Contains Coarse Aggregate)
+
+| Product | Strength | Aggregate | Max Size | Min Thickness | Bag Sizes |
+|---------|----------|-----------|----------|---------------|-----------|
+| **Quikrete 1101 Concrete Mix** | 4000 psi @ 28 days | Portland cement, sand, gravel | 3/8" - 1/2" | 2" (50mm) | 40, 50, 60, 80 lb |
+| **Quikrete 5000 High Early** | 5000 psi @ 28 days | Portland cement, sand, gravel | 3/8" - 1/2" | 2" (50mm) | 50, 80 lb |
+| **Quikrete 1004 Fast-Setting** | 4000 psi @ 28 days | Rapid-set cement, sand, gravel | 3/8" | 2" (50mm) | 50 lb |
+| **Sakrete Concrete Mix** | 4000 psi @ 28 days | Portland cement, sand, coarse aggregate | 3/8" - 1/2" | 2" (50mm) | 40, 60, 80 lb |
+| **Sakrete High-Strength** | 5000 psi @ 28 days | Portland cement, sand, coarse aggregate | 3/8" - 1/2" | 2" (50mm) | 60, 80 lb |
+| **Sakrete Maximizer** | 4000 psi @ 28 days | Lightweight aggregate blend | 3/8" | 2" (50mm) | 80 lb |
+| **Sakrete Fast-Setting** | 4000 psi @ 28 days | Rapid-set cement, sand, aggregate | 3/8" | 2" (50mm) | 50 lb |
+
+#### Mortar Mixes (Fine Aggregate Only - No Gravel)
+
+| Product | Type | Strength | Aggregate | Standards | Uses |
+|---------|------|----------|-----------|-----------|------|
+| **Quikrete Mason Mix** | Type S | 1800 psi | Masonry sand | ASTM C 270 | Brick, block, stone |
+| **Quikrete Mortar Mix** | Type N | 750 psi | Masonry sand | ASTM C 270 | General masonry |
+| **Sakrete Type S Mortar** | Type S | 1800 psi | Masonry sand | ASTM C 270, C 1714 | Structural masonry |
+| **Sakrete Type N Mortar** | Type N | 750 psi | Masonry sand | ASTM C 270 | Above-grade masonry |
+
+#### Sand Mixes (Fine Aggregate Only - No Gravel)
+
+| Product | Strength | Aggregate | Thickness Range | Uses |
+|---------|----------|-----------|-----------------|------|
+| **Quikrete Sand/Topping Mix** | 5000 psi | Portland cement + fine sand | 1/2" - 2" | Overlays, repairs |
+| **Sakrete Sand Mix** | 5000 psi | Portland cement + quartz silica sand | 1/2" - 2" | Thin applications, bedding |
+
+#### Grout Products (Fine Aggregate, High Flow)
+
+| Product | Strength | Aggregate | Consistency | Standards |
+|---------|----------|-----------|-------------|-----------|
+| **Quikrete Non-Shrink Grout** | 8000 psi | Fine aggregate | Flowable to plastic | ASTM C 1107 |
+| **Quikrete FastSet Grout** | 6000 psi @ 1 day | Fine aggregate | 30-min set | ASTM C 928, C 1107 |
+| **Sakrete Non-Shrink Grout** | 7000 psi | Fine aggregate + silica fume | Dry pack to flowable | ASTM C 1107 |
+
+### Aggregate Size Classification (ASTM Standards)
+
+| Classification | Sieve Size | Typical Use |
+|----------------|------------|-------------|
+| **Fine Aggregate** | Passes 3/8" (#4), retained on #200 | Mortar, sand mix, grout |
+| **Coarse Aggregate** | Retained on 3/8" (#4) sieve | Concrete mix |
+| **#8 Aggregate** | 3/8" to 0.094" nominal | Bagged concrete mixes |
+| **Pea Gravel** | 1/4" - 3/8" typical | Common in bagged mixes |
+
+### Water Requirements (Per Bag)
+
+| Product Type | Water per 80 lb bag | Water per 60 lb bag | Slump Target |
+|--------------|---------------------|---------------------|--------------|
+| Concrete Mix | 6 pints (2.8 L) | 4.5 pints (2.1 L) | 2" - 3" |
+| Mortar Mix | 5 pints (2.4 L) | 3.75 pints (1.8 L) | Workable |
+| Sand Mix | 4 pints (1.9 L) | 3 pints (1.4 L) | Stiff |
+| Grout | 3.75 quarts (3.5 L) | 2.8 quarts (2.6 L) | Flowable |
+
+### Mixing Considerations for Auger Mixer
+
+1. **Working Time**: Standard mixes allow ~1 hour working time; fast-setting products allow 10-30 minutes
+2. **Water Control**: Excess water reduces strength - adjustable water system critical
+3. **Aggregate Jamming**: 4" auger with 0.5" clearance handles all products with ≤1/2" aggregate
+4. **Cleanup**: Continuous water flow prevents buildup between batches
+
 ---
 
 ## 1. KNOWN SPECIFICATIONS (High Confidence)
