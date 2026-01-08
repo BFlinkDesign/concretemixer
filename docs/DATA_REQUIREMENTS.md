@@ -101,8 +101,8 @@ This document identifies the **KNOWN** specifications from public sources vs **U
 Based on 1/2" max aggregate:
   Minimum clearance = 0.5" × 1.2 = 0.6" (15mm) safety factor
 
-If chute is 6" ID tube (common steel pipe):
-  Auger OD ≈ 5.0" - 5.25"
+If chute is 4" ID tube (common steel pipe):
+  Auger OD ≈ 5.0" - 3.25"
   Clearance ≈ 0.375" - 0.5" per side
 ```
 
@@ -254,8 +254,8 @@ Until actual measurements are obtained, use these **conservative assumptions**:
 ```python
 ASSUMPTIONS = {
     # Geometry
-    "housing_id": 6.0,          # inches (standard 6" steel pipe)
-    "auger_od": 5.5,            # inches (0.25" clearance per side)
+    "housing_id": 4.0,          # inches (standard 6" steel pipe)
+    "auger_od": 4.25,            # inches (0.25" clearance per side)
     "clearance_gap": 0.25,      # inches per side
 
     # Motor
