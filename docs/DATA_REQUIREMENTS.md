@@ -4,6 +4,15 @@
 
 This document identifies the **KNOWN** specifications from public sources vs **UNKNOWN** specifications that require measurement, manufacturer contact, or destructive analysis for proper engineering replication.
 
+## Design Purpose
+
+This concrete mixer is specifically designed for **bagged concrete mix products** such as:
+- **Sakrete** - Concrete Mix, Mortar Mix, Sand Mix
+- **Quikrete** - Concrete Mix, Fast-Setting Concrete, Mortar Mix
+- **Other bagged products** - Pre-mixed cement, grout, stucco
+
+These bagged products have controlled aggregate sizes (typically ≤ 1/2") and pre-proportioned cement/aggregate ratios, making them ideal for continuous auger mixing.
+
 ---
 
 ## 1. KNOWN SPECIFICATIONS (High Confidence)
@@ -46,6 +55,7 @@ This document identifies the **KNOWN** specifications from public sources vs **U
 | Parameter | Value | Source | Confidence |
 |-----------|-------|--------|------------|
 | Type | Shaftless Helical | Patent 10,259,140 | ★★★★★ |
+| **Auger Outer Diameter** | **4.0 in (102 mm)** | Design Spec | ★★★★★ |
 | P/D Ratio (Hopper) | 0.2 - 0.9 | Patent 10,259,140 | ★★★★☆ |
 | P/D Ratio (Preferred) | 0.5 - 0.8 | Patent 11,285,639 | ★★★★☆ |
 | P/D Ratio (Chute) | 0.6 - 1.0 | Patent 11,285,639 | ★★★★☆ |
@@ -84,26 +94,33 @@ This document identifies the **KNOWN** specifications from public sources vs **U
 
 ## 2. UNKNOWN SPECIFICATIONS (Critical Gaps)
 
-### 2.1 Auger Housing Interface ⛔ BLOCKING
-| Parameter | Needed For | Impact Level |
-|-----------|------------|--------------|
-| **Housing Internal Diameter (ID)** | Clearance calculation, CFD | ⛔ CRITICAL |
-| **Auger Outer Diameter (OD)** | Clearance calculation | ⛔ CRITICAL |
-| **Clearance Gap** | Flow analysis, aggregate jamming | ⛔ CRITICAL |
+### 2.1 Auger Housing Interface ⚠️ PARTIALLY RESOLVED
+| Parameter | Value/Status | Impact Level |
+|-----------|--------------|--------------|
+| **Auger Outer Diameter (OD)** | **4.0 in (102 mm) - KNOWN** | ✅ RESOLVED |
+| **Housing Internal Diameter (ID)** | To be determined | ⚠️ HIGH |
+| **Clearance Gap** | To be determined | ⚠️ HIGH |
 
-**Why Critical**:
+**Design Guidance** (with 4" OD auger):
 - Gap too small (<2mm): Friction, heat buildup, finger wear
 - Gap too large (>6mm): Loss of shear efficiency, aggregate bypass
 - Required for CFD simulation of concrete flow
 
-**Estimation Method**:
+**Recommended Housing ID** (based on 4" auger OD):
 ```
-Based on 1/2" max aggregate:
-  Minimum clearance = 0.5" × 1.2 = 0.6" (15mm) safety factor
+Given: Auger OD = 4.0"
+       Max aggregate = 0.5" (bagged concrete mix)
 
-If chute is 4" ID tube (common steel pipe):
-  Auger OD ≈ 5.0" - 3.25"
-  Clearance ≈ 0.375" - 0.5" per side
+Minimum clearance = 0.25" per side (for bagged mix with controlled aggregate)
+Recommended clearance = 0.375" - 0.5" per side
+
+Housing ID options:
+  - 4.5" ID: 0.25" clearance per side (minimum)
+  - 5.0" ID: 0.50" clearance per side (recommended)
+
+Standard pipe options:
+  - 4" Schedule 40 pipe: 4.026" ID (TOO SMALL)
+  - 5" Schedule 40 pipe: 5.047" ID (good fit, 0.52" clearance)
 ```
 
 ### 2.2 Motor Shaft Specifications ⛔ BLOCKING
@@ -252,11 +269,11 @@ To proceed with computational design, the following **minimum data** is required
 Until actual measurements are obtained, use these **conservative assumptions**:
 
 ```python
-ASSUMPTIONS = {
-    # Geometry
-    "housing_id": 4.0,          # inches (standard 6" steel pipe)
-    "auger_od": 3.25,            # inches (0.25" clearance per side)
-    "clearance_gap": 0.25,      # inches per side
+SPECIFICATIONS = {
+    # Geometry - CONFIRMED
+    "auger_od": 4.0,            # inches - CONFIRMED
+    "housing_id": 5.0,          # inches (5" Schedule 40 pipe recommended)
+    "clearance_gap": 0.5,       # inches per side
 
     # Motor
     "acme_thread": "5/8-8 LH",  # Common size for this torque class
@@ -266,11 +283,12 @@ ASSUMPTIONS = {
     # Materials
     "finger_material": "steel", # Conservative assumption
     "finger_diameter": 0.375,   # inches (3/8")
-    "finger_length": 2.0,       # inches
+    "finger_length": 1.5,       # inches (extends into 4" auger interior)
     "finger_count": 8,          # per full auger length
 
     # Constraints
-    "max_aggregate": 0.5,       # inches (CONFIRMED)
+    "intended_use": "bagged_concrete_mix",  # Sakrete, Quikrete, etc.
+    "max_aggregate": 0.5,       # inches (per bagged product specs)
     "duty_cycle": "intermittent",
     "safety_factor": 2.5,
 }

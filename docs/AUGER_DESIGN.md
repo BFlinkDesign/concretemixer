@@ -2,7 +2,12 @@
 
 ## Overview
 
-The MudMixer uses a **shaftless helical auger** as its core mixing and conveying element. This design is critical to the mixer's ability to handle aggregate-containing concrete mixes in a continuous process.
+This mixer uses a **shaftless helical auger** as its core mixing and conveying element. The design is optimized for **bagged concrete mix products** (Sakrete, Quikrete, etc.) with controlled aggregate sizes.
+
+### Key Specification
+| Parameter | Value |
+|-----------|-------|
+| **Auger Outer Diameter** | **4.0 in (102 mm)** |
 
 ## Auger Type: Shaftless Helical
 
@@ -160,14 +165,16 @@ Where:
 
 ### Example Calculations
 
-Assuming an auger outer diameter of approximately 6 inches (152 mm):
+With auger outer diameter of **4.0 inches (102 mm)**:
 
 | Section | P/D Ratio | Pitch (inches) | Pitch (mm) |
 |---------|-----------|----------------|------------|
-| Hopper (low) | 0.5 | 3.0 | 76 |
-| Hopper (high) | 0.8 | 4.8 | 122 |
-| Chute (low) | 0.6 | 3.6 | 91 |
-| Chute (high) | 1.0 | 6.0 | 152 |
+| Hopper (low) | 0.5 | 2.0 | 51 |
+| Hopper (high) | 0.8 | 3.2 | 81 |
+| Chute (low) | 0.6 | 2.4 | 61 |
+| Chute (high) | 1.0 | 4.0 | 102 |
+
+**Recommended Design**: Start at 2.0" pitch in hopper, transition to 3.2-4.0" pitch in chute.
 
 ### Flight Thickness
 
@@ -189,10 +196,19 @@ For shaftless augers handling abrasive materials like concrete:
 
 ### Material Considerations
 
-1. **Abrasion resistance**: Concrete aggregates are highly abrasive
+1. **Abrasion resistance**: Bagged concrete mix aggregates (≤1/2") are abrasive
 2. **Corrosion resistance**: Cement is alkaline; moisture present
-3. **Strength**: Must handle 120-300 lbs of material
+3. **Strength**: Must handle 120-300 lbs of bagged product
 4. **Flexibility**: Shaftless design requires inherent rigidity
+
+### Intended Materials (Bagged Concrete Products)
+| Product Type | Typical Aggregate | Max Size |
+|--------------|-------------------|----------|
+| Sakrete Concrete Mix | Gravel/sand | 3/8" - 1/2" |
+| Quikrete Concrete Mix | Gravel/sand | 3/8" - 1/2" |
+| Mortar Mix | Sand only | Fine |
+| Sand Mix | Sand only | Fine |
+| Fast-Setting Concrete | Gravel/sand | 3/8" |
 
 ---
 
@@ -208,12 +224,13 @@ Shaftless auger flights can be manufactured by:
 
 ### Key Dimensions to Control
 
-| Dimension | Tolerance | Impact |
-|-----------|-----------|--------|
-| Outer diameter | ±1/16" | Clearance in chute |
-| Pitch | ±1/8" | Flow rate, mixing |
-| Flight thickness | ±10% | Strength, wear life |
-| Finger length | ±1/8" | Mixing effectiveness |
+| Dimension | Nominal | Tolerance | Impact |
+|-----------|---------|-----------|--------|
+| **Outer diameter** | **4.0"** | ±1/16" | Clearance in housing |
+| Pitch (hopper) | 2.0" | ±1/8" | Flow rate, mixing |
+| Pitch (chute) | 3.2-4.0" | ±1/8" | Discharge rate |
+| Flight thickness | 3/16" | ±10% | Strength, wear life |
+| Finger length | 1.5" | ±1/8" | Mixing effectiveness |
 
 ---
 
