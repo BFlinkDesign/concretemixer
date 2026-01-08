@@ -255,7 +255,7 @@ Until actual measurements are obtained, use these **conservative assumptions**:
 ASSUMPTIONS = {
     # Geometry
     "housing_id": 4.0,          # inches (standard 6" steel pipe)
-    "auger_od": 4.25,            # inches (0.25" clearance per side)
+    "auger_od": 3.25,            # inches (0.25" clearance per side)
     "clearance_gap": 0.25,      # inches per side
 
     # Motor
