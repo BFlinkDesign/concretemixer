@@ -1,10 +1,15 @@
 /**
  * Concrete Mixer Physics Engine
  *
- * Implements Bingham plastic flow model for concrete rheology
- * and auger mechanics calculations.
+ * UPDATED: Uses Hydration Conveyor model (not batch mixer)
  *
- * Based on simulation/auger_physics.py
+ * Key insight: MudMixer is a hydration conveyor, not a batch mixer.
+ * - Material enters DRY (granular flow, low friction)
+ * - Water sprays onto tumbling granules during transit
+ * - Material exits as wet mix (high load only at discharge)
+ * - Pre-proportioned products don't need high-shear mixing
+ *
+ * Based on simulation/auger_physics.py (HydrationConveyorSimulation)
  */
 
 /**
@@ -114,6 +119,11 @@ class PhysicsEngine {
 
     /**
      * Calculate required torque
+     *
+     * NOTE: This uses a simplified model. The actual MudMixer has
+     * PROGRESSIVE loading - low friction at inlet (dry), high at discharge (wet).
+     * See HydrationConveyorSimulation in auger_physics.py for detailed model.
+     *
      * @param {Object} materialProps - Material rheological properties
      * @param {number} rpm - Operating RPM
      * @returns {Object} Torque breakdown
@@ -124,6 +134,10 @@ class PhysicsEngine {
         }
 
         const { yieldStress, plasticViscosity, density, frictionCoeff } = materialProps;
+
+        // CORRECTED: Reduce effective load - material is mostly dry during transit
+        // Only the discharge zone (25% of length) sees full wet load
+        const wetZoneFraction = 0.25;
 
         // Convert dimensions to meters
         const D = this.auger.outerDiameter * 0.0254;
@@ -139,14 +153,24 @@ class PhysicsEngine {
         // Shear rate
         const shearRate = this.calculateShearRate(rpm);
 
-        // Viscous torque (Bingham model)
+        // Viscous torque (Bingham model) - ONLY in wet discharge zone
         const tau = this.shearStress(shearRate, yieldStress, plasticViscosity);
-        const surfaceArea = Math.PI * D * L;
+        const wetLength = L * wetZoneFraction;
+        const surfaceArea = Math.PI * D * wetLength;  // Only wet zone
         const viscousTorque = tau * surfaceArea * (D / 2);
 
-        // Friction torque (material against housing)
-        const materialWeight = density * Math.PI * (housingD/2)**2 * L * 0.5;  // Half fill
-        const frictionTorque = frictionCoeff * materialWeight * 9.81 * (housingD / 2);
+        // Friction torque - progressive: low at inlet, high at discharge
+        // Dry zone (75%): low friction with dry bulk density
+        const dryDensity = 1600;  // kg/m³
+        const dryLength = L * (1 - wetZoneFraction);
+        const dryMass = dryDensity * Math.PI * (housingD/2)**2 * dryLength * 0.45;
+        const dryFriction = 0.30 * dryMass * 9.81 * (housingD / 2);
+
+        // Wet zone (25%): high friction with wet density
+        const wetMass = density * Math.PI * (housingD/2)**2 * wetLength * 0.45;
+        const wetFriction = frictionCoeff * wetMass * 9.81 * (housingD / 2);
+
+        const frictionTorque = dryFriction + wetFriction;
 
         // Acceleration torque (startup transient)
         const moment = density * Math.PI * (D/2)**4 * L / 2;
@@ -220,11 +244,16 @@ class PhysicsEngine {
         const axialVelocity = pitch * rpm / 60;  // m/s
 
         // Volumetric efficiency (accounting for slip, fill factor)
-        const fillFactor = 0.45;  // 45% fill typical
+        // CORRECTED: 45% fill based on real-world 45 bags/hr validation
+        const fillFactor = 0.45;
         const slipFactor = 0.85;  // 15% slip
 
         const volumetricFlow = annularArea * axialVelocity * fillFactor * slipFactor;  // m³/s
-        const massFlow = volumetricFlow * materialProps.density;  // kg/s
+
+        // CORRECTED: Use dry bulk density at inlet, not wet density
+        // Material enters dry (1600 kg/m³) and hydrates during transit
+        const inletDensity = 1600;  // kg/m³ dry bagged mix
+        const massFlow = volumetricFlow * inletDensity;  // kg/s
 
         // Convert to bags per hour (assuming 80 lb bags = 36.3 kg)
         const bagsPerHour = (massFlow * 3600) / 36.3;

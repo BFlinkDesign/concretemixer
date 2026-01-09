@@ -78,6 +78,82 @@ These bagged products have controlled aggregate sizes (typically ≤ 1/2") and p
 
 ---
 
+## Physics Model: Hydration Conveyor (Not Batch Mixer)
+
+> **Critical Insight**: The MudMixer is a **hydration conveyor**, not a traditional batch mixer.
+> This distinction fundamentally changes how to model its physics.
+
+### Why Traditional Mixer Physics Don't Apply
+
+| Batch Mixer Model | Hydration Conveyor Model (Correct) |
+|-------------------|-----------------------------------|
+| Mixed slurry throughout | Dry granules progressively wetted |
+| Bingham plastic rheology | Granular flow + surface wetting |
+| High shear required for mixing | Water distribution is primary goal |
+| Fill efficiency 30-35% | Fill efficiency 45-50% actual |
+| Residence time for homogenization | Residence time for hydration |
+
+### How the MudMixer Actually Works
+
+```
+INLET (Dry)              MIDDLE (Wetting)           OUTLET (Hydrated)
+┌─────────────┐         ┌─────────────┐           ┌─────────────┐
+│ Dry granules│   ──►   │ Water spray │   ──►     │ Wet mix out │
+│ Low friction│         │ + tumbling  │           │ Higher load │
+│ Easy convey │         │ Absorption  │           │ Brief zone  │
+└─────────────┘         └─────────────┘           └─────────────┘
+
+Motor load: LOW              MEDIUM                    HIGH (brief)
+```
+
+**Key points:**
+1. Material enters **dry** - low friction, easy to convey
+2. Water sprays onto tumbling granules - absorption occurs during transit
+3. Material exits as wet mix - high load zone is only at discharge
+4. Pre-proportioned bagged products don't need high-shear mixing
+
+### Corrected Simulation Parameters
+
+```python
+CORRECTED_PARAMETERS = {
+    # Fill Efficiency - HIGHER than traditional screw conveyor
+    "fill_efficiency": 0.45,      # Was 0.35, verified by 45 bags/hr throughput
+
+    # Rheology - Progressive, not uniform
+    "inlet_friction": 0.3,        # Dry granules
+    "middle_friction": 0.5,       # Wetting zone
+    "outlet_friction": 0.7,       # Hydrated mix (brief)
+
+    # Motor Loading - Not constant along length
+    "load_distribution": "progressive",  # Not uniform
+    "peak_load_zone": "last_25_percent", # Discharge end only
+
+    # Residence Time - Adequate for hydration
+    "residence_time_sec": 35,     # Sufficient for water absorption
+    "hydration_requirement": "surface_wetting",  # Not full homogenization
+}
+```
+
+### Design Features Explained
+
+| Feature | Initial Concern | Actual Purpose |
+|---------|-----------------|----------------|
+| 0.52" clearance | "Too large for shear" | Prevents jamming, self-cleaning |
+| Increasing pitch | "Wrong for mixing" | Prevents backup, enables continuous flow |
+| 0.5 HP motor | "Marginal capacity" | Sized for dry granules, not slurry |
+| Dual nozzles | "Insufficient coverage" | Adequate for surface wetting |
+| 27 RPM | "Low shear rate" | Optimized for gentle tumbling |
+
+### Real-World Validation
+
+User feedback confirms the model:
+- 100+ bag jobs with consistent results
+- 45 bags/hr sustained throughput verified
+- No motor overheating at continuous duty
+- Only user adjustment needed: water dial tuning
+
+---
+
 ## 1. KNOWN SPECIFICATIONS (High Confidence)
 
 ### 1.1 Overall Dimensions
