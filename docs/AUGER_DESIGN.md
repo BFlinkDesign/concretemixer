@@ -24,12 +24,24 @@ TRADITIONAL AUGER (with shaft):          SHAFTLESS AUGER (MudMixer):
     (material flows around)               (material flows through)
 ```
 
+### Key Patent Features (US 10,259,140)
+
+| Feature | Specification | Patent Reference |
+|---------|---------------|------------------|
+| Helix Type | Right-handed helix | Claim description |
+| Motor Coupling | **Left-Hand Acme Thread** | Critical design detail |
+| Fingers | 4 (preferred embodiment) | Claim |
+| Aperture Finger | Required at transition | Claim 17 |
+
+**Critical**: Left-hand Acme thread prevents auger from unscrewing during forward rotation.
+
 ### Advantages of Shaftless Design
 
-1. **Handles aggregates**: No center shaft to jam on gravel
+1. **Handles aggregates**: No center shaft to jam on gravel (up to 1/2" aggregate)
 2. **Self-cleaning**: Open center reduces material buildup
 3. **Sticky materials**: Originally developed for wet, sticky products
 4. **Better mixing**: Fingers extend into interior volume for enhanced mixing
+5. **No joints/crevices**: Eliminates slurry buildup points
 
 ---
 
@@ -133,8 +145,12 @@ SIDE VIEW WITH FINGERS:
 
 ### Finger Placement
 
-- One finger is disposed approximately at the **aperture** (hopper-to-chute transition)
-- Multiple fingers distributed along auger length
+Per Patent 10,259,140:
+- **Preferred count: 4 fingers** (one embodiment specifies this)
+- One finger is disposed approximately at the **aperture** (hopper-to-chute transition) — Patent Claim 17
+- Multiple fingers distributed along auger length (~every 2-3 inches)
+- Estimated: 8-12 fingers total in production units
+- Typical dimensions: 3/8" diameter rod, ~2" long
 - Fingers break up material and enhance mixing action
 
 ### Finger Function

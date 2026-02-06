@@ -9,9 +9,21 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 | Attribute | Value |
 |-----------|-------|
 | **Manufacturer** | MudMixer, LLC (formerly Red Dog Mobile Shelters, LLC) |
-| **Model** | MMXR-3221 / MMXR-3225 (Evolution) |
+| **Models** | MMXR-3221 (discontinued), MMXR-3225 (Evolution), **MudMixer Pro (NEW 2026)** |
 | **Type** | Continuous-feed portable electric mixer |
 | **Patents** | US 10,259,140 B1, US 11,285,639 B2, D943,639 |
+
+### MudMixer Pro (Announced January 2026)
+
+> **NEW**: Unveiled at World of Concrete 2026 (Jan 20-22, Las Vegas)
+
+| Spec | MudMixer Pro | Evolution |
+|------|--------------|-----------|
+| Throughput | **3+ yd³/hour** | 1 yd³/hour |
+| Motor | **1.5 HP** | 0.5 HP |
+| Hopper | **250 lbs** | 120 lbs |
+| Wheels | 4 all-terrain | 2 flat-free |
+| Swivel | 360° | 330° |
 
 ## Key Features
 
@@ -34,14 +46,15 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 ## Documentation Structure
 
 ### Core Documentation (`docs/`)
-- [Technical Specifications](./docs/SPECIFICATIONS.md) - Dimensions, power, capacity
+- [Technical Specifications](./docs/SPECIFICATIONS.md) - Dimensions, power, capacity (includes **MudMixer Pro**)
 - [Main Assemblies](./docs/ASSEMBLIES.md) - Frame, hopper, chute, drive system
 - [Auger Design](./docs/AUGER_DESIGN.md) - Shaftless auger geometry and principles
-- [Water System](./docs/WATER_SYSTEM.md) - Spray nozzle and flow control
+- [Water System](./docs/WATER_SYSTEM.md) - Spray nozzle and flow control (with part numbers)
 - [**Power System**](./docs/POWER_SYSTEM.md) - ⚡ Dual power: 120V AC + DeWalt FlexVolt
 - [Bill of Materials](./docs/BOM.md) - Component list for replication
 - [Engineering Calculations](./docs/ENGINEERING.md) - Design calculations and principles
 - [**Data Requirements**](./docs/DATA_REQUIREMENTS.md) - ⚠️ Known vs unknown specs, critical gaps
+- [**Known Issues**](./docs/KNOWN_ISSUES.md) - 🔧 Tribal knowledge: user problems, workarounds, limitations
 
 ### Technical Drawings (`drawings/`)
 - [Assembly Drawing](./drawings/ASSEMBLY_DRAWING.md) - Side/front/top views

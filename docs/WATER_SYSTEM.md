@@ -46,13 +46,27 @@ The MudMixer uses a pressurized water injection system with dual spray nozzles t
 | Location | Near hopper on frame |
 | Type | Quick-connect or threaded |
 
+### Solenoid Valve (MMXR-P114)
+
+| Specification | Value |
+|---------------|-------|
+| Part Number | MMXR-P114 |
+| Size | 3/8-inch brass |
+| Type | Electrically actuated |
+| Evolution Upgrade | Waterproof solenoid |
+| Pressure Rating | Up to 145 PSI (10 bar) |
+| Temperature Range | 15°F to 250°F |
+| Response Time | <1 second |
+| Seal Material | FKM (Viton) |
+
 ### Flow Control Dial
 
 | Specification | Value |
 |---------------|-------|
-| Type | Needle valve or ball valve |
-| Adjustment | Fully adjustable |
+| Type | Needle valve (metering device) |
+| Adjustment | Fully adjustable (0-100 scale) |
 | Range | Off to full flow |
+| Starting Position | 35-50 for concrete |
 | Marking | Graduated dial |
 | Location | Accessible during operation |
 
@@ -69,11 +83,25 @@ The MudMixer uses a pressurized water injection system with dual spray nozzles t
 
 | Specification | Value |
 |---------------|-------|
+| Part Number | MMXR-P122 (nozzle adapter) |
+| Thread | 1/4" NPT Male |
 | Quantity | 2 (dual configuration) |
 | Location | At aperture/auger entry point |
 | Pattern | Fan or cone spray |
 | Material | Brass or stainless steel |
 | Orientation | Angled into material flow |
+
+### Confirmed Water System Part Numbers
+
+| Part Number | Description | Price |
+|-------------|-------------|-------|
+| MMXR-P114 | 3/8" Brass Solenoid Valve | $144.00 |
+| MMXR-P122 | 1/4" NPT Male Nozzle Adapter Spray Head | $24.54 |
+| MMXR-P121 | 3/8" OD × 1/4" NPT Female Straight Adapter | $30.54 |
+| MMXR-P108 | 3/8" OD Tubing × 34.25" | $7.83 |
+| — | Two Way Divider 3/8" OD × 2-3/8" OD | $12.14 |
+
+Source: [Foards MudMixer Parts](https://www.foards.com/pages/mud-mixer-parts-mmxr-3221)
 
 ## Operating Parameters
 
