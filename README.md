@@ -63,7 +63,14 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 
 ### Computational Tools (`src/`)
 - [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework
+- [parametric_auger.py](./src/parametric_auger.py) - **NEW** Parametric auger CAD generator
+- [mudmixer_auger.scad](./src/mudmixer_auger.scad) - **NEW** OpenSCAD model (generated)
+- [auger_spec.json](./src/auger_spec.json) - **NEW** JSON specification for CAD interchange
 - [requirements.txt](./src/requirements.txt) - Python dependencies
+
+### 3D Visualization (`src/visualization/`)
+- [index.html](./src/visualization/index.html) - **NEW** WebGL visualization with Three.js
+- [package.json](./src/visualization/package.json) - Node.js dependencies for build
 
 ## Operation Principle
 
