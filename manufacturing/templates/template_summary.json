@@ -1,0 +1,48 @@
+{
+  "tube_spec": {
+    "name": "1-1/4\" Schedule 40",
+    "od_inches": 1.66,
+    "wall_inches": 0.14,
+    "od_mm": 42.163999999999994,
+    "circumference_mm": 132.46211264596002
+  },
+  "joints": [
+    {
+      "name": "Cross_to_Main_90deg",
+      "angle_degrees": 90.0,
+      "max_cut_depth_mm": 42.163999999999994,
+      "template_file": "cope_cross_to_main_90deg.svg"
+    },
+    {
+      "name": "Handle_to_Frame_60deg",
+      "angle_degrees": 60.0,
+      "max_cut_depth_mm": 48.686793500222755,
+      "template_file": "cope_handle_to_frame_60deg.svg"
+    },
+    {
+      "name": "Handle_to_Frame_45deg",
+      "angle_degrees": 45.0,
+      "max_cut_depth_mm": 59.62890064389918,
+      "template_file": "cope_handle_to_frame_45deg.svg"
+    },
+    {
+      "name": "Axle_Support_75deg",
+      "angle_degrees": 75.0,
+      "max_cut_depth_mm": 43.65138487081074,
+      "template_file": "cope_axle_support_75deg.svg"
+    },
+    {
+      "name": "Hopper_Vertical_90deg",
+      "angle_degrees": 90.0,
+      "max_cut_depth_mm": 42.163999999999994,
+      "template_file": "cope_hopper_vertical_90deg.svg"
+    }
+  ],
+  "source_calculation": "CALC-STRUCT-001",
+  "notes": [
+    "Print templates at 100% scale (no fit-to-page)",
+    "Wrap template around tube, align 0\u00b0 mark with weld seam",
+    "Mark cut line with scribe or marker",
+    "Cut with angle grinder, plasma, or tube notcher"
+  ]
+}

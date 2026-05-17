@@ -1,0 +1,151 @@
+# LIGGGHTS DEM Simulation - MudMixer Shaftless Auger
+# Validated auger geometry from CALC-AUGER-001 (CEMA 350)
+#
+# Reference: https://github.com/CFDEMproject/LIGGGHTS-PUBLIC
+# Tutorial: https://www.youtube.com/watch?v=IXZXTeu2RaA
+#
+# Auger Specs (from parametric_auger.py):
+#   OD: 2.5" (63.5mm)
+#   ID: 1.125" (28.6mm)
+#   Length: 36" (914mm)
+#   Housing ID: 2.75" (69.85mm)
+#   Operating RPM: 25
+#
+# Material: Concrete/Mortar Mix
+#   Bulk density: 94 lb/ft³ (~1505 kg/m³)
+#   Particle size: 0.1-12mm (sand + aggregate)
+
+# ============================================================
+# INITIALIZATION
+# ============================================================
+
+atom_style      granular
+atom_modify     map array
+boundary        f f f
+newton          off
+communicate     single vel yes
+
+units           si
+region          domain block -0.05 0.05 -0.05 0.05 0.0 1.0 units box
+create_box      2 domain
+
+neighbor        0.003 bin
+neigh_modify    delay 0
+
+# ============================================================
+# MATERIAL PROPERTIES
+# ============================================================
+
+# Define material properties for concrete mix particles
+# Material 1: Sand/cement particles (smaller)
+# Material 2: Fine aggregate (larger)
+
+fix             m1 all property/global youngsModulus peratomtype 1e7 1e7
+fix             m2 all property/global poissonsRatio peratomtype 0.3 0.3
+fix             m3 all property/global coefficientRestitution peratomtypepair 2 0.3 0.3 0.3 0.3
+fix             m4 all property/global coefficientFriction peratomtypepair 2 0.5 0.5 0.5 0.5
+fix             m5 all property/global coefficientRollingFriction peratomtypepair 2 0.1 0.1 0.1 0.1
+
+# ============================================================
+# GEOMETRY - Import Auger and Housing from STL/STEP
+# ============================================================
+
+# Auger geometry (convert STEP to STL first)
+# Use: freecad -c "import Part; Part.open('mudmixer_auger.step'); Part.export([Part.ActiveDocument.Objects[0]], 'auger.stl')"
+
+fix             auger all mesh/surface file meshes/auger.stl type 1 scale 0.001 rotate axis 0 0 1 angle 0
+fix             housing all mesh/surface file meshes/housing.stl type 1 scale 0.001
+
+# Create cylindrical housing if STL not available
+# region          housing_wall cylinder z 0 0 0.034925 0.0 0.914 side in
+# fix             housing_wall all wall/gran model hertz tangential history mesh n_meshes 1 meshes housing
+
+# ============================================================
+# AUGER ROTATION
+# ============================================================
+
+# Rotate auger at 25 RPM = 2.618 rad/s
+fix             rotate_auger all move/mesh mesh auger rotate origin 0. 0. 0. axis 0. 0. 1. period 2.4
+
+# ============================================================
+# PARTICLE INSERTION
+# ============================================================
+
+# Particle factory - insert concrete mix at inlet (hopper region)
+region          inlet_zone cylinder z 0 0 0.025 0.85 0.90 side in
+
+# Size distribution based on typical concrete mix
+# Sand: 0.1-2mm, Fine aggregate: 2-12mm (max 0.5" = 12.7mm per spec)
+fix             pts1 all particletemplate/sphere 15485863 atom_type 1 density constant 1505 radius constant 0.001
+fix             pts2 all particletemplate/sphere 15485867 atom_type 2 density constant 1505 radius constant 0.004
+
+fix             pdd all particledistribution/discrete 32452867 2 pts1 0.7 pts2 0.3
+
+# Insert particles at inlet
+fix             ins all insert/stream seed 32452867 distributiontemplate pdd &
+                nparticles 10000 particlerate 1000 overlapcheck yes all_in no vel constant 0. 0. -0.1 &
+                insertion_face inlet_zone
+
+# ============================================================
+# PHYSICS
+# ============================================================
+
+# Contact model: Hertz with tangential friction
+pair_style      gran model hertz tangential history rolling_friction cdt
+pair_coeff      * *
+
+# Gravity
+fix             gravity all gravity 9.81 vector 0.0 0.0 -1.0
+
+# Wall contact with housing
+fix             wall_contact all wall/gran model hertz tangential history mesh n_meshes 2 meshes auger housing
+
+# Integration
+fix             integrator all nve/sphere
+
+# ============================================================
+# OUTPUT
+# ============================================================
+
+# Compute mass flow at outlet
+region          outlet_zone cylinder z 0 0 0.034925 0.0 0.05 side in
+compute         outlet_mass all property/atom mass
+compute         outlet_flow all reduce/region outlet_zone sum c_outlet_mass
+
+# Dump particle positions for visualization
+dump            dmp all custom/vtk 1000 post/particles_*.vtk id type x y z vx vy vz radius
+
+# Thermo output
+thermo_style    custom step atoms ke cpu c_outlet_flow
+thermo          1000
+thermo_modify   lost warn norm no
+
+# ============================================================
+# RUN SIMULATION
+# ============================================================
+
+# Timestep based on particle size and material properties
+# dt = 0.2 * sqrt(m_min / k_max) for Hertz contact
+timestep        1e-5
+
+# Run for 10 seconds of simulation time (1M steps)
+run             1000000
+
+# ============================================================
+# POST-PROCESSING NOTES
+# ============================================================
+#
+# Analyze results with ParaView:
+# 1. Open post/particles_*.vtk sequence
+# 2. Apply Glyph filter with sphere representation
+# 3. Color by velocity magnitude
+#
+# Calculate throughput:
+# - Count particles exiting outlet_zone per unit time
+# - Multiply by average particle mass
+# - Compare to CEMA prediction: 38.3 ft³/hr at 25 RPM
+#
+# Validate:
+# - Flow uniformity
+# - Mixing quality (particle distribution)
+# - Power consumption (from torque on auger)
