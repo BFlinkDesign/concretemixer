@@ -1,0 +1,44 @@
+{
+  "overall": {
+    "length_in": 66.5,
+    "width_in": 27.5,
+    "height_in": 35.0,
+    "length_mm": 1689.1,
+    "width_mm": 698.5,
+    "height_mm": 889.0
+  },
+  "frame_tube": {
+    "schedule": "Schedule 40",
+    "od_in": 1.315,
+    "wall_in": 0.133,
+    "id_in": 1.049
+  },
+  "body": {
+    "gauge": 14,
+    "thickness_in": 0.0747,
+    "thickness_mm": 1.89738
+  },
+  "hopper": {
+    "length_in": 24.0,
+    "width_in": 20.0,
+    "height_in": 12.0
+  },
+  "chute": {
+    "length_in": 16.0,
+    "diameter_in": 3.0
+  },
+  "handle": {
+    "length_in": 18.0,
+    "height_in": 30.0,
+    "spread_in": 20.0
+  },
+  "wheels": {
+    "axle_diameter_in": 0.625,
+    "offset_in": 12.0
+  },
+  "motor_mount": {
+    "length_in": 6.0,
+    "width_in": 6.0,
+    "bolt_pattern_in": 4.5
+  }
+}

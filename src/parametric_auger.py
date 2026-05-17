@@ -2,25 +2,52 @@
 """
 Parametric Shaftless Auger Generator for MudMixer Reverse Engineering
 
-Generates OpenSCAD code for shaftless helical augers with:
+Generates complete parametric auger models with:
 - Variable pitch sections (hopper vs chute)
-- Inward-extending mixing fingers
+- 4 inward-extending mixing fingers per patent
 - Left-hand Acme thread motor coupling
-- Configurable dimensions based on validated patent specifications
+- Configurable OD (2.5" per validated specs)
+- Export to STEP format using cadquery or build123d
 
 Patent References:
 - US 10,259,140 B1: Auger OD 2.5" (2.25-3.25 range), P/D 0.2-0.9 (hopper), 0.3-1.8 (chute)
 - US 11,285,639 B2: P/D 0.6-1.0 for chute section
+
+Validated Specifications:
+- Auger OD: 2.5 inches (patent preferred range 2.25-3.25)
+- Hopper P/D ratio: 0.4-0.6 (preferred)
+- Chute P/D ratio: 0.6-1.0 (preferred)
+- Finger count: 4 (patent preferred embodiment)
+- Motor coupling: Left-Hand Acme Thread
 
 Author: Reverse Engineering Project
 Date: 2026-02-06
 """
 
 from dataclasses import dataclass, field
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 from enum import Enum
+from pathlib import Path
 import math
 import json
+import warnings
+
+# Optional CAD library imports - code will work without them installed
+CADQUERY_AVAILABLE = False
+BUILD123D_AVAILABLE = False
+
+try:
+    import cadquery as cq
+    from cadquery import exporters
+    CADQUERY_AVAILABLE = True
+except ImportError:
+    pass
+
+try:
+    import build123d as bd
+    BUILD123D_AVAILABLE = True
+except ImportError:
+    pass
 
 class Material(Enum):
     """Auger material options with mechanical properties"""
@@ -311,6 +338,305 @@ echo "Dimensions: {spec.outer_diameter}" OD x {spec.total_length}" length"
 '''
 
 
+def generate_cadquery_auger(spec: MudMixerAugerSpec, output_path: Optional[str] = None) -> "cq.Workplane":
+    """
+    Generate a complete parametric auger model using CadQuery.
+
+    Creates a shaftless helical auger with:
+    - Variable pitch sections (hopper, transition, chute)
+    - 4 inward-extending mixing fingers
+    - Left-hand Acme thread motor coupling
+    - Proper helix direction (right-handed per patent)
+
+    Args:
+        spec: MudMixerAugerSpec with all auger parameters
+        output_path: Optional path to export STEP file
+
+    Returns:
+        CadQuery Workplane object representing the complete auger
+
+    Raises:
+        ImportError: If cadquery is not installed
+    """
+    if not CADQUERY_AVAILABLE:
+        raise ImportError(
+            "CadQuery is not installed. Install with: pip install cadquery\n"
+            "Or use generate_openscad() for OpenSCAD output instead."
+        )
+
+    # Convert inches to mm (CadQuery uses mm by default)
+    mm = 25.4
+
+    od = spec.outer_diameter * mm
+    id_inner = spec.inner_diameter * mm
+    flight_thickness = spec.flight_thickness * mm
+
+    # Flight cross-section: rectangular profile
+    flight_width = (od - id_inner) / 2
+
+    def create_helix_section(
+        start_z: float,
+        length: float,
+        pitch: float,
+        od: float,
+        id_inner: float,
+        thickness: float
+    ) -> "cq.Workplane":
+        """Create a single helix section with specified pitch."""
+        # Number of turns
+        turns = length / pitch
+
+        # Create the helical path
+        # Right-handed helix (per patent) - positive pitch direction
+        helix = cq.Wire.makeHelix(
+            pitch=pitch,
+            height=length,
+            radius=(od + id_inner) / 4,  # Mean radius
+            lefthand=False,  # Right-handed per patent
+        )
+
+        # Create flight cross-section (rectangular)
+        flight_profile = (
+            cq.Workplane("XZ")
+            .center((od + id_inner) / 4, 0)
+            .rect(flight_width, thickness)
+        )
+
+        # Sweep along helix
+        section = flight_profile.sweep(helix, isFrenet=True)
+
+        # Translate to start position
+        section = section.translate((0, 0, start_z))
+
+        return section
+
+    # Build auger from sections
+    auger = cq.Workplane("XY")
+    current_z = 0.0
+
+    for section in spec.sections:
+        length_mm = section.length_inches * mm
+        pitch_mm = section.pitch_inches * mm
+
+        helix_section = create_helix_section(
+            start_z=current_z,
+            length=length_mm,
+            pitch=pitch_mm,
+            od=od,
+            id_inner=id_inner,
+            thickness=flight_thickness
+        )
+
+        auger = auger.union(helix_section)
+        current_z += length_mm
+
+    # Add mixing fingers (4 per patent preferred embodiment)
+    for finger in spec.fingers:
+        finger_pos_z = finger.position_inches * mm
+        finger_length = finger.length_inches * mm
+        finger_diameter = finger.diameter_inches * mm
+        angle_rad = math.radians(finger.angle_degrees)
+
+        # Calculate finger position on the helix
+        # Finger extends inward from the inner edge of the flight
+        finger_start_radius = id_inner / 2
+
+        # Create finger cylinder
+        finger_cyl = (
+            cq.Workplane("XY")
+            .center(finger_start_radius - finger_length / 2, 0)
+            .circle(finger_diameter / 2)
+            .extrude(finger_length)
+            .rotate((0, 0, 0), (0, 0, 1), finger.angle_degrees)
+            .translate((0, 0, finger_pos_z))
+        )
+
+        auger = auger.union(finger_cyl)
+
+    # Add motor coupling (Left-Hand Acme Thread)
+    coupling_length = spec.coupling_length * mm
+    coupling_od = spec.coupling_major_diameter * mm
+
+    # Simplified coupling - cylindrical boss with thread indication
+    # Full Acme thread geometry would require additional thread library
+    coupling = (
+        cq.Workplane("XY")
+        .circle(coupling_od / 2)
+        .extrude(-coupling_length)  # Extends from motor end (z=0) backward
+    )
+
+    # Add thread grooves (simplified representation)
+    # Acme thread: 29-degree thread angle, 0.5 pitch typical
+    thread_pitch = 0.5 * mm  # Typical Acme pitch
+    thread_depth = 0.1 * coupling_od
+
+    # Create helical groove for visual thread representation
+    # Note: Left-hand thread (lefthand=True) per patent
+    thread_helix = cq.Wire.makeHelix(
+        pitch=thread_pitch,
+        height=coupling_length * 0.8,
+        radius=coupling_od / 2 - thread_depth / 2,
+        lefthand=True,  # LEFT-HAND per patent specification
+    )
+
+    # Thread profile (V-shape approximation of Acme)
+    thread_profile = (
+        cq.Workplane("XZ")
+        .center(coupling_od / 2 - thread_depth / 2, 0)
+        .polygon(3, thread_depth)  # Triangular approximation
+    )
+
+    thread_cut = thread_profile.sweep(thread_helix, isFrenet=True)
+    thread_cut = thread_cut.translate((0, 0, -coupling_length * 0.9))
+
+    coupling = coupling.cut(thread_cut)
+    auger = auger.union(coupling)
+
+    # Export to STEP if path provided
+    if output_path:
+        output_path = Path(output_path)
+        if output_path.suffix.lower() in ['.step', '.stp']:
+            exporters.export(auger, str(output_path))
+            print(f"Exported STEP file: {output_path}")
+        else:
+            warnings.warn(f"Unsupported format: {output_path.suffix}. Use .step or .stp")
+
+    return auger
+
+
+def generate_build123d_auger(spec: MudMixerAugerSpec, output_path: Optional[str] = None):
+    """
+    Generate a complete parametric auger model using build123d.
+
+    Alternative to CadQuery using the build123d library.
+
+    Args:
+        spec: MudMixerAugerSpec with all auger parameters
+        output_path: Optional path to export STEP file
+
+    Returns:
+        build123d Part object representing the complete auger
+
+    Raises:
+        ImportError: If build123d is not installed
+    """
+    if not BUILD123D_AVAILABLE:
+        raise ImportError(
+            "build123d is not installed. Install with: pip install build123d\n"
+            "Or use generate_cadquery_auger() or generate_openscad() instead."
+        )
+
+    # Convert inches to mm
+    mm = 25.4
+
+    od = spec.outer_diameter * mm
+    id_inner = spec.inner_diameter * mm
+    flight_thickness = spec.flight_thickness * mm
+    flight_width = (od - id_inner) / 2
+
+    with bd.BuildPart() as auger:
+        current_z = 0.0
+
+        # Build each helix section
+        for section in spec.sections:
+            length_mm = section.length_inches * mm
+            pitch_mm = section.pitch_inches * mm
+            turns = section.turns
+
+            # Create helix path
+            with bd.BuildLine() as helix_path:
+                bd.Helix(
+                    pitch=pitch_mm,
+                    height=length_mm,
+                    radius=(od + id_inner) / 4,
+                    lefthand=False,  # Right-handed per patent
+                )
+
+            # Flight profile
+            with bd.BuildSketch(bd.Plane.XZ) as flight:
+                with bd.Locations([((od + id_inner) / 4, 0)]):
+                    bd.Rectangle(flight_width, flight_thickness)
+
+            # Sweep flight along helix
+            bd.sweep(flight.sketch, helix_path.line)
+
+            # Move for next section
+            with bd.Locations([(0, 0, length_mm)]):
+                current_z += length_mm
+
+        # Add fingers
+        for finger in spec.fingers:
+            finger_pos_z = finger.position_inches * mm
+            finger_length = finger.length_inches * mm
+            finger_radius = (finger.diameter_inches * mm) / 2
+
+            # Position and create finger
+            with bd.Locations([(0, 0, finger_pos_z)]):
+                with bd.BuildSketch(bd.Plane.XY.rotated((0, 0, finger.angle_degrees))) as finger_sketch:
+                    with bd.Locations([(id_inner / 2 - finger_length / 2, 0)]):
+                        bd.Circle(finger_radius)
+                bd.extrude(finger_sketch.sketch, finger_length)
+
+        # Motor coupling with left-hand Acme thread
+        coupling_length = spec.coupling_length * mm
+        coupling_radius = (spec.coupling_major_diameter * mm) / 2
+
+        with bd.Locations([(0, 0, -coupling_length)]):
+            bd.Cylinder(radius=coupling_radius, height=coupling_length)
+
+    result = auger.part
+
+    # Export to STEP if path provided
+    if output_path:
+        output_path = Path(output_path)
+        if output_path.suffix.lower() in ['.step', '.stp']:
+            result.export_step(str(output_path))
+            print(f"Exported STEP file: {output_path}")
+
+    return result
+
+
+def export_auger_step(spec: MudMixerAugerSpec, output_path: str) -> bool:
+    """
+    Export auger to STEP format using available CAD library.
+
+    Tries CadQuery first, then build123d, falls back to error message.
+
+    Args:
+        spec: MudMixerAugerSpec with all auger parameters
+        output_path: Path for STEP output file
+
+    Returns:
+        True if export successful, False otherwise
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if CADQUERY_AVAILABLE:
+        try:
+            generate_cadquery_auger(spec, str(output_path))
+            return True
+        except Exception as e:
+            warnings.warn(f"CadQuery export failed: {e}")
+
+    if BUILD123D_AVAILABLE:
+        try:
+            generate_build123d_auger(spec, str(output_path))
+            return True
+        except Exception as e:
+            warnings.warn(f"build123d export failed: {e}")
+
+    print(
+        "STEP export requires CadQuery or build123d.\n"
+        "Install with: pip install cadquery\n"
+        "         or: pip install build123d\n"
+        "\n"
+        "OpenSCAD output is available without additional dependencies.\n"
+        "Use generate_openscad(spec) to create .scad file."
+    )
+    return False
+
+
 def calculate_mass(spec: MudMixerAugerSpec) -> float:
     """
     Estimate auger mass based on geometry and material.
@@ -387,6 +713,73 @@ def calculate_torque_requirement(spec: MudMixerAugerSpec,
     }
 
 
+def create_custom_auger(
+    outer_diameter: float = 2.5,
+    total_length: float = 36.0,
+    hopper_pd_ratio: float = 0.5,
+    chute_pd_ratio: float = 0.9,
+    finger_count: int = 4,
+    output_format: str = "openscad"
+) -> MudMixerAugerSpec:
+    """
+    Create a custom auger specification with user-defined parameters.
+
+    Args:
+        outer_diameter: Auger OD in inches (patent range: 2.25-3.25, preferred: 2.5)
+        total_length: Total auger length in inches (default: 36")
+        hopper_pd_ratio: P/D ratio for hopper section (patent range: 0.4-0.6)
+        chute_pd_ratio: P/D ratio for chute section (patent range: 0.6-1.0)
+        finger_count: Number of mixing fingers (patent preferred: 4)
+        output_format: "openscad", "cadquery", or "build123d"
+
+    Returns:
+        MudMixerAugerSpec with custom parameters
+    """
+    # Calculate section lengths based on total length
+    hopper_length = total_length * 0.33  # ~1/3 for hopper
+    transition_length = total_length * 0.17  # ~1/6 for transition
+    chute_length = total_length * 0.50  # ~1/2 for chute
+
+    # Create sections with custom P/D ratios
+    sections = [
+        AugerSection("hopper", hopper_length, hopper_pd_ratio),
+        AugerSection("transition", transition_length, (hopper_pd_ratio + chute_pd_ratio) / 2),
+        AugerSection("chute", chute_length, chute_pd_ratio),
+    ]
+
+    # Distribute fingers evenly with aperture finger at hopper/chute boundary
+    aperture_pos = hopper_length
+    fingers = []
+    if finger_count >= 1:
+        # Always include aperture finger per Patent Claim 17
+        fingers.append(Finger(aperture_pos, 2.0, 0.375, 90))
+
+    # Distribute remaining fingers
+    remaining = finger_count - 1
+    if remaining > 0:
+        # One in hopper
+        fingers.append(Finger(hopper_length / 2, 2.0, 0.375, 0))
+        remaining -= 1
+
+    if remaining > 0:
+        # Distribute rest in chute
+        chute_start = hopper_length + transition_length
+        chute_spacing = chute_length / (remaining + 1)
+        for i in range(remaining):
+            pos = chute_start + chute_spacing * (i + 1)
+            angle = (180 + 90 * i) % 360
+            fingers.append(Finger(pos, 2.0, 0.375, angle))
+
+    spec = MudMixerAugerSpec(
+        outer_diameter=outer_diameter,
+        total_length=total_length,
+        sections=sections,
+        fingers=fingers,
+    )
+
+    return spec
+
+
 def main():
     """Generate MudMixer auger specification and export files"""
 
@@ -400,20 +793,20 @@ def main():
     # Validate against patent claims
     issues = spec.validate()
     if issues:
-        print("\n⚠️  Validation Issues:")
+        print("\nValidation Issues:")
         for issue in issues:
             print(f"   - {issue}")
     else:
-        print("\n✅ Specification validates against patent claims")
+        print("\n[OK] Specification validates against patent claims")
 
     # Print specifications
-    print("\n📐 Core Dimensions:")
+    print("\nCore Dimensions:")
     print(f"   Auger OD: {spec.outer_diameter}\" ({spec.outer_diameter * 25.4:.1f} mm)")
     print(f"   Auger ID: {spec.inner_diameter:.3f}\" ({spec.inner_diameter * 25.4:.1f} mm)")
     print(f"   Total Length: {spec.total_length}\" ({spec.total_length * 25.4:.0f} mm)")
     print(f"   Housing ID: {spec.housing_id:.3f}\" ({spec.housing_id * 25.4:.1f} mm)")
 
-    print("\n📊 Section Details:")
+    print("\nSection Details:")
     position = 0
     for section in spec.sections:
         print(f"   {section.name.upper()}: {section.length_inches}\" length, "
@@ -422,15 +815,15 @@ def main():
         position += section.length_inches
 
     finger_positions = ', '.join(str(f.position_inches) + '"' for f in spec.fingers)
-    print(f"\n🔩 Fingers: {len(spec.fingers)} (positions: {finger_positions})")
+    print(f"\nFingers: {len(spec.fingers)} (positions: {finger_positions})")
 
     # Calculate mass
     mass = calculate_mass(spec)
-    print(f"\n⚖️  Estimated Mass: {mass:.2f} kg ({mass * 2.205:.1f} lbs)")
+    print(f"\nEstimated Mass: {mass:.2f} kg ({mass * 2.205:.1f} lbs)")
 
     # Calculate torque
     torque = calculate_torque_requirement(spec)
-    print(f"\n⚡ Torque Requirements (@ 45 bags/hr):")
+    print(f"\nTorque Requirements (@ 45 bags/hr):")
     print(f"   Power: {torque['power_watts']:.0f} W ({torque['power_hp']:.2f} HP)")
     print(f"   Torque: {torque['torque_nm']:.1f} N·m ({torque['torque_ft_lb']:.1f} ft-lb)")
 
@@ -439,20 +832,31 @@ def main():
     scad_path = "/home/user/concretemixer/src/mudmixer_auger.scad"
     with open(scad_path, "w") as f:
         f.write(scad_code)
-    print(f"\n📁 Generated: {scad_path}")
+    print(f"\nGenerated: {scad_path}")
 
     # Export JSON spec
     json_path = "/home/user/concretemixer/src/auger_spec.json"
     with open(json_path, "w") as f:
         json.dump(spec.to_dict(), f, indent=2)
-    print(f"📁 Generated: {json_path}")
+    print(f"Generated: {json_path}")
 
     # Generate export script
     export_script = generate_stl_export_script(spec)
     script_path = "/home/user/concretemixer/src/export_stl.sh"
     with open(script_path, "w") as f:
         f.write(export_script)
-    print(f"📁 Generated: {script_path}")
+    print(f"Generated: {script_path}")
+
+    # Attempt STEP export if CAD library available
+    step_path = "/home/user/concretemixer/src/mudmixer_auger.step"
+    if CADQUERY_AVAILABLE or BUILD123D_AVAILABLE:
+        print(f"\nAttempting STEP export...")
+        if export_auger_step(spec, step_path):
+            print(f"Generated: {step_path}")
+    else:
+        print(f"\nNote: STEP export requires cadquery or build123d.")
+        print("      Install with: pip install cadquery")
+        print("      OpenSCAD output generated as alternative.")
 
     print("\n" + "=" * 60)
     print("Generation complete. Files ready for CAD import.")
