@@ -68,10 +68,13 @@ class SteelGauge(Enum):
 
 
 class PipeSchedule(Enum):
-    """Standard steel pipe schedules for 1" nominal pipe."""
-    SCH_40 = ("Schedule 40", 1.315, 0.133)  # OD, wall thickness in inches
-    SCH_80 = ("Schedule 80", 1.315, 0.179)
-    SCH_10 = ("Schedule 10", 1.315, 0.109)
+    """Standard steel pipe schedules per ASTM A513 / AISC Manual 15th Ed."""
+    # 1" nominal - INADEQUATE per CALC-STRUCT-001 (SF=1.24)
+    NPS1_SCH_40 = ("1\" Schedule 40", 1.315, 0.133)  # OD, wall thickness in inches
+    NPS1_SCH_80 = ("1\" Schedule 80", 1.315, 0.179)
+    # 1-1/4" nominal - RECOMMENDED per CALC-STRUCT-001 (SF=2.19)
+    NPS1_25_SCH_40 = ("1-1/4\" Schedule 40", 1.660, 0.140)  # VALIDATED
+    NPS1_25_SCH_80 = ("1-1/4\" Schedule 80", 1.660, 0.191)
 
     def __init__(self, name: str, od_inches: float, wall_inches: float):
         self.schedule_name = name
@@ -92,8 +95,9 @@ class FrameDimensions:
     overall_width: float = 27.5   # inches
     overall_height: float = 35.0  # inches
 
-    # Frame tube specifications
-    tube_schedule: PipeSchedule = PipeSchedule.SCH_40
+    # Frame tube specifications - VALIDATED per CALC-STRUCT-001
+    # 1-1/4" Sch 40 required for SF=2.19 (1" Sch 40 only SF=1.24)
+    tube_schedule: PipeSchedule = PipeSchedule.NPS1_25_SCH_40
 
     # Body material
     body_gauge: SteelGauge = SteelGauge.GAUGE_14
@@ -347,9 +351,9 @@ class FrameModel:
         if abs(d.overall_height - 35.0) > 2.0:
             issues.append(f"Overall height {d.overall_height}\" deviates from spec 35\"")
 
-        # Check tube schedule
-        if d.tube_schedule != PipeSchedule.SCH_40:
-            issues.append(f"Tube schedule {d.tube_schedule.schedule_name} differs from spec Schedule 40")
+        # Check tube schedule - VALIDATED: 1-1/4" Sch 40 required per CALC-STRUCT-001
+        if d.tube_schedule != PipeSchedule.NPS1_25_SCH_40:
+            issues.append(f"Tube schedule {d.tube_schedule.schedule_name} differs from validated 1-1/4\" Schedule 40")
 
         # Check body gauge
         if d.body_gauge != SteelGauge.GAUGE_14:
@@ -437,7 +441,7 @@ def generate_cadquery_frame(model: FrameModel, output_path: Optional[str] = None
         tube = tube.translate(start)
 
         # Add to assembly
-        asm.add(tube, name=path.name, color=cq.Color("gray"))
+        asm.add(tube, name=path.name, color=cq.Color(0.5, 0.5, 0.5))
 
     # Create motor mounting plate
     motor_plate_x = (18.0 + d.hopper_length) * mm
@@ -459,7 +463,7 @@ def generate_cadquery_frame(model: FrameModel, output_path: Optional[str] = None
         .translate((motor_plate_x, motor_plate_y, motor_plate_z))
     )
 
-    asm.add(motor_plate, name="motor_plate", color=cq.Color("darkgray"))
+    asm.add(motor_plate, name="motor_plate", color=cq.Color(0.4, 0.4, 0.4))
 
     # Create simplified hopper shell (14 gauge sheet)
     hopper_thickness = d.body_thickness * mm
@@ -490,7 +494,7 @@ def generate_cadquery_frame(model: FrameModel, output_path: Optional[str] = None
         .translate((hopper_base_x + hopper_length / 2, 0, hopper_base_z + hopper_height / 2))
     )
 
-    asm.add(hopper, name="hopper_shell", color=cq.Color("steelblue"))
+    asm.add(hopper, name="hopper_shell", color=cq.Color(0.27, 0.51, 0.71))
 
     # Create chute (cylindrical housing)
     chute_od = d.chute_diameter * mm + 2 * d.body_thickness * mm
@@ -506,7 +510,7 @@ def generate_cadquery_frame(model: FrameModel, output_path: Optional[str] = None
         .translate((0, 0, 0))  # Extends forward from hopper
     )
 
-    asm.add(chute, name="chute", color=cq.Color("steelblue"))
+    asm.add(chute, name="chute", color=cq.Color(0.27, 0.51, 0.71))
 
     # Export to STEP if path provided
     if output_path:

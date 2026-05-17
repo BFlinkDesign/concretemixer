@@ -8,10 +8,10 @@
     "height_mm": 889.0
   },
   "frame_tube": {
-    "schedule": "Schedule 40",
-    "od_in": 1.315,
-    "wall_in": 0.133,
-    "id_in": 1.049
+    "schedule": "1-1/4\" Schedule 40",
+    "od_in": 1.66,
+    "wall_in": 0.14,
+    "id_in": 1.38
   },
   "body": {
     "gauge": 14,

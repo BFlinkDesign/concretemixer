@@ -5,8 +5,8 @@
 $fn = 32;  // Resolution for tubes
 
 // Dimensions (in mm)
-tube_od = 33.400999999999996;
-tube_wall = 3.3782;
+tube_od = 42.163999999999994;
+tube_wall = 3.556;
 tube_id = tube_od - 2 * tube_wall;
 
 body_thickness = 1.89738;
