@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MudMixer 3D Visualization - Reverse Engineering</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            overflow: hidden;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #info-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 350px;
+            z-index: 100;
+        }
+        #info-panel h1 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #4fc3f7;
+        }
+        #info-panel h2 {
+            font-size: 0.9em;
+            margin: 15px 0 8px;
+            color: #81d4fa;
+        }
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85em;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .spec-label { color: #aaa; }
+        .spec-value { color: #4fc3f7; font-family: monospace; }
+        #controls-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="info-panel">
+        <h1>MudMixer MMXR-3225</h1>
+        <p style="font-size: 0.8em; color: #888; margin-bottom: 15px;">
+            Reverse Engineered Specifications
+        </p>
+
+        <h2>Auger Dimensions</h2>
+        <div class="spec-row">
+            <span class="spec-label">Outer Diameter</span>
+            <span class="spec-value">2.5" (63.5 mm)</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">Total Length</span>
+            <span class="spec-value">36.0" (914 mm)</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">Hopper P/D Ratio</span>
+            <span class="spec-value">0.5</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">Chute P/D Ratio</span>
+            <span class="spec-value">0.9</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">Mixing Fingers</span>
+            <span class="spec-value">4</span>
+        </div>
+
+        <h2>Motor Specs</h2>
+        <div class="spec-row">
+            <span class="spec-label">Power</span>
+            <span class="spec-value">250W (IP55)</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">RPM (Output)</span>
+            <span class="spec-value">~118 RPM</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">Torque</span>
+            <span class="spec-value">95-129 N·m</span>
+        </div>
+
+        <h2>Performance</h2>
+        <div class="spec-row">
+            <span class="spec-label">Throughput</span>
+            <span class="spec-value">45+ bags/hr</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">Max Aggregate</span>
+            <span class="spec-value">0.5" (12.7 mm)</span>
+        </div>
+
+        <h2>Physics Simulation</h2>
+        <div class="spec-row">
+            <span class="spec-label">Particles</span>
+            <span class="spec-value" id="particle-count">0</span>
+        </div>
+        <div class="spec-row">
+            <span class="spec-label">FPS</span>
+            <span class="spec-value" id="fps">0</span>
+        </div>
+    </div>
+
+    <div id="controls-hint">
+        🖱️ Drag to rotate | Scroll to zoom | Right-click to pan | Space to toggle simulation
+    </div>
+
+    <div id="loading">Loading 3D Model...</div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ============================================
+        // MudMixer 3D Visualization
+        // Based on validated patent specifications
+        // ============================================
+
+        // Auger specifications from validated data
+        const AUGER_SPEC = {
+            outerDiameter: 63.5,      // mm (2.5")
+            innerDiameter: 28.6,      // mm
+            totalLength: 914,         // mm (36")
+            flightThickness: 4.76,    // mm (3/16")
+            sections: [
+                { name: 'hopper', length: 304.8, pitchToDiameter: 0.5 },      // 12"
+                { name: 'transition', length: 152.4, pitchToDiameter: 0.7 },  // 6"
+                { name: 'chute', length: 457.2, pitchToDiameter: 0.9 }        // 18"
+            ],
+            fingers: [
+                { position: 152.4, angle: 0 },     // 6"
+                { position: 304.8, angle: 90 },   // 12" (aperture)
+                { position: 457.2, angle: 180 },  // 18"
+                { position: 609.6, angle: 270 }   // 24"
+            ],
+            rpm: 118
+        };
+
+        // Housing specifications
+        const HOUSING_SPEC = {
+            innerDiameter: 69.85,     // mm (2.75")
+            wallThickness: 1.9,       // mm (14 gauge)
+            hopperLength: 400,        // mm
+            chuteLength: 406          // mm (16")
+        };
+
+        // Scene setup
+        let scene, camera, renderer, controls;
+        let augerGroup, particleSystem;
+        let isSimulating = false;
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+            scene.fog = new THREE.Fog(0x1a1a2e, 500, 2000);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                5000
+            );
+            camera.position.set(400, 300, 600);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0, 0, AUGER_SPEC.totalLength / 2);
+
+            // Lighting
+            setupLighting();
+
+            // Create geometry
+            createAuger();
+            createHousing();
+            createFrame();
+            createFloor();
+            createParticleSystem();
+
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+
+            // Events
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    isSimulating = !isSimulating;
+                }
+            });
+
+            // Start animation
+            animate();
+        }
+
+        function setupLighting() {
+            // Ambient
+            const ambient = new THREE.AmbientLight(0x404080, 0.5);
+            scene.add(ambient);
+
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+            mainLight.position.set(300, 500, 300);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            mainLight.shadow.camera.near = 100;
+            mainLight.shadow.camera.far = 1500;
+            mainLight.shadow.camera.left = -500;
+            mainLight.shadow.camera.right = 500;
+            mainLight.shadow.camera.top = 500;
+            mainLight.shadow.camera.bottom = -500;
+            scene.add(mainLight);
+
+            // Fill light
+            const fillLight = new THREE.DirectionalLight(0x4fc3f7, 0.3);
+            fillLight.position.set(-200, 100, -200);
+            scene.add(fillLight);
+
+            // Rim light
+            const rimLight = new THREE.DirectionalLight(0xff6b6b, 0.2);
+            rimLight.position.set(0, -100, 400);
+            scene.add(rimLight);
+        }
+
+        function createAuger() {
+            augerGroup = new THREE.Group();
+
+            // Create helical flight using parametric geometry
+            let zOffset = 0;
+
+            for (const section of AUGER_SPEC.sections) {
+                const pitch = section.pitchToDiameter * AUGER_SPEC.outerDiameter;
+                const turns = section.length / pitch;
+
+                // Create helix points
+                const helixCurve = new THREE.Curve();
+                helixCurve.getPoint = function(t) {
+                    const angle = t * turns * Math.PI * 2;
+                    const z = zOffset + t * section.length;
+                    const radius = AUGER_SPEC.outerDiameter / 2;
+                    return new THREE.Vector3(
+                        Math.cos(angle) * radius,
+                        Math.sin(angle) * radius,
+                        z
+                    );
+                };
+
+                // Create tube geometry for flight
+                const tubeGeometry = new THREE.TubeGeometry(
+                    helixCurve,
+                    Math.floor(turns * 32),
+                    AUGER_SPEC.flightThickness / 2,
+                    8,
+                    false
+                );
+
+                const flightMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x555555,
+                    metalness: 0.8,
+                    roughness: 0.3
+                });
+
+                const flight = new THREE.Mesh(tubeGeometry, flightMaterial);
+                flight.castShadow = true;
+                flight.receiveShadow = true;
+                augerGroup.add(flight);
+
+                zOffset += section.length;
+            }
+
+            // Create mixing fingers
+            const fingerMaterial = new THREE.MeshStandardMaterial({
+                color: 0x888888,
+                metalness: 0.9,
+                roughness: 0.2
+            });
+
+            for (const finger of AUGER_SPEC.fingers) {
+                const fingerGeometry = new THREE.CylinderGeometry(
+                    4.76,  // 3/8" radius
+                    4.76,
+                    50.8,  // 2" length
+                    12
+                );
+
+                const fingerMesh = new THREE.Mesh(fingerGeometry, fingerMaterial);
+                fingerMesh.rotation.z = Math.PI / 2;
+                fingerMesh.rotation.y = THREE.MathUtils.degToRad(finger.angle);
+                fingerMesh.position.z = finger.position;
+                fingerMesh.castShadow = true;
+                augerGroup.add(fingerMesh);
+            }
+
+            // Center auger
+            augerGroup.rotation.x = Math.PI / 2;
+            scene.add(augerGroup);
+        }
+
+        function createHousing() {
+            // Semi-transparent housing for visualization
+            const housingMaterial = new THREE.MeshStandardMaterial({
+                color: 0x4682b4,
+                metalness: 0.5,
+                roughness: 0.3,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+
+            // Chute section (cylindrical)
+            const chuteGeometry = new THREE.CylinderGeometry(
+                HOUSING_SPEC.innerDiameter / 2 + HOUSING_SPEC.wallThickness,
+                HOUSING_SPEC.innerDiameter / 2 + HOUSING_SPEC.wallThickness,
+                HOUSING_SPEC.chuteLength,
+                32,
+                1,
+                true
+            );
+
+            const chute = new THREE.Mesh(chuteGeometry, housingMaterial);
+            chute.rotation.x = Math.PI / 2;
+            chute.position.z = HOUSING_SPEC.chuteLength / 2;
+            scene.add(chute);
+
+            // Hopper (truncated cone)
+            const hopperGeometry = new THREE.CylinderGeometry(
+                150,  // Top radius (hopper opening)
+                HOUSING_SPEC.innerDiameter / 2 + HOUSING_SPEC.wallThickness,
+                HOUSING_SPEC.hopperLength,
+                32,
+                1,
+                true
+            );
+
+            const hopper = new THREE.Mesh(hopperGeometry, housingMaterial);
+            hopper.rotation.x = Math.PI / 2;
+            hopper.position.z = HOUSING_SPEC.chuteLength + HOUSING_SPEC.hopperLength / 2;
+            hopper.position.y = 50;
+            scene.add(hopper);
+        }
+
+        function createFrame() {
+            // Simplified frame representation
+            const frameMaterial = new THREE.MeshStandardMaterial({
+                color: 0x333333,
+                metalness: 0.7,
+                roughness: 0.4
+            });
+
+            // Main frame tubes (1" steel pipe = 25.4mm)
+            const tubeRadius = 12.7;
+
+            // Support legs
+            const legGeometry = new THREE.CylinderGeometry(tubeRadius, tubeRadius, 300, 16);
+
+            const positions = [
+                { x: -100, z: 200 },
+                { x: 100, z: 200 },
+                { x: -100, z: 600 },
+                { x: 100, z: 600 }
+            ];
+
+            for (const pos of positions) {
+                const leg = new THREE.Mesh(legGeometry, frameMaterial);
+                leg.position.set(pos.x, -150, pos.z);
+                leg.castShadow = true;
+                leg.receiveShadow = true;
+                scene.add(leg);
+            }
+
+            // Wheels (Marathon 00210 - 10.5" diameter)
+            const wheelGeometry = new THREE.TorusGeometry(133.35, 41.9, 16, 32);
+            const wheelMaterial = new THREE.MeshStandardMaterial({
+                color: 0x222222,
+                metalness: 0.2,
+                roughness: 0.8
+            });
+
+            const wheelPositions = [
+                { x: -150, z: 700 },
+                { x: 150, z: 700 }
+            ];
+
+            for (const pos of wheelPositions) {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.rotation.y = Math.PI / 2;
+                wheel.position.set(pos.x, -200, pos.z);
+                wheel.castShadow = true;
+                scene.add(wheel);
+            }
+        }
+
+        function createFloor() {
+            const floorGeometry = new THREE.PlaneGeometry(3000, 3000);
+            const floorMaterial = new THREE.MeshStandardMaterial({
+                color: 0x222233,
+                metalness: 0.1,
+                roughness: 0.9
+            });
+
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -350;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Grid helper
+            const grid = new THREE.GridHelper(2000, 40, 0x444466, 0x333344);
+            grid.position.y = -349;
+            scene.add(grid);
+        }
+
+        function createParticleSystem() {
+            // Particle system for concrete mix visualization
+            const particleCount = 500;
+            const geometry = new THREE.BufferGeometry();
+
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+
+            for (let i = 0; i < particleCount; i++) {
+                // Random position in hopper area
+                positions[i * 3] = (Math.random() - 0.5) * 100;
+                positions[i * 3 + 1] = Math.random() * 100 + 50;
+                positions[i * 3 + 2] = 600 + Math.random() * 200;
+
+                // Concrete gray color with variation
+                const gray = 0.4 + Math.random() * 0.2;
+                colors[i * 3] = gray;
+                colors[i * 3 + 1] = gray;
+                colors[i * 3 + 2] = gray;
+
+                // Random size (aggregate variation)
+                sizes[i] = 3 + Math.random() * 9;  // 3-12mm particles
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const material = new THREE.PointsMaterial({
+                size: 8,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+
+            particleSystem = new THREE.Points(geometry, material);
+            scene.add(particleSystem);
+
+            document.getElementById('particle-count').textContent = particleCount;
+        }
+
+        function updateParticles(delta) {
+            if (!isSimulating || !particleSystem) return;
+
+            const positions = particleSystem.geometry.attributes.position.array;
+            const count = positions.length / 3;
+
+            for (let i = 0; i < count; i++) {
+                // Move particles through the auger
+                positions[i * 3 + 2] -= delta * 50;  // Move along Z
+
+                // Spiral motion to simulate auger conveyance
+                const z = positions[i * 3 + 2];
+                const angle = z * 0.02 + delta * AUGER_SPEC.rpm * 0.1;
+                const radius = 20 + Math.random() * 10;
+
+                positions[i * 3] = Math.cos(angle) * radius;
+                positions[i * 3 + 1] = Math.sin(angle) * radius;
+
+                // Reset particles that exit
+                if (positions[i * 3 + 2] < 0) {
+                    positions[i * 3] = (Math.random() - 0.5) * 100;
+                    positions[i * 3 + 1] = Math.random() * 100 + 50;
+                    positions[i * 3 + 2] = 700 + Math.random() * 100;
+                }
+            }
+
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const currentTime = performance.now();
+            const delta = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            // Update FPS counter
+            frameCount++;
+            if (frameCount % 30 === 0) {
+                document.getElementById('fps').textContent = Math.round(1 / delta);
+            }
+
+            // Rotate auger
+            if (isSimulating && augerGroup) {
+                augerGroup.rotation.z += delta * AUGER_SPEC.rpm * (Math.PI / 30);
+            }
+
+            // Update particles
+            updateParticles(delta);
+
+            // Update controls
+            controls.update();
+
+            // Render
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

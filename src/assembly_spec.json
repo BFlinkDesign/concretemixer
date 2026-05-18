@@ -1,0 +1,471 @@
+{
+  "assembly_name": "MudMixer MMXR-3225 Complete Assembly",
+  "version": "1.0.0",
+  "date": "2026-05-17",
+  "source": "Reverse engineered from patents and validated specifications",
+
+  "references": {
+    "patents": [
+      {
+        "number": "US 10,259,140 B1",
+        "title": "Portable concrete mixer for hydrating and mixing concrete mix",
+        "filed": "2018-10-19",
+        "issued": "2019-04-16"
+      },
+      {
+        "number": "US 11,285,639 B2",
+        "title": "Portable mixer for hydrating and mixing cementitious mix",
+        "filed": "2020-01-30",
+        "issued": "2022-03-29"
+      }
+    ],
+    "specifications": [
+      "docs/VALIDATED_SPECIFICATIONS.md",
+      "docs/AUGER_DESIGN.md"
+    ]
+  },
+
+  "overall_dimensions": {
+    "length_inches": 66.5,
+    "width_inches": 27.5,
+    "height_inches": 35.0,
+    "length_mm": 1689,
+    "width_mm": 699,
+    "height_mm": 889,
+    "dry_weight_lbs": 145,
+    "dry_weight_kg": 66
+  },
+
+  "components": {
+    "auger": {
+      "part_name": "Shaftless Helical Auger",
+      "source_file": "src/parametric_auger.py",
+      "spec_file": "src/auger_spec.json",
+      "quantity": 1,
+      "specifications": {
+        "outer_diameter_inches": 2.5,
+        "total_length_inches": 36.0,
+        "helix_direction": "right_hand",
+        "motor_coupling": "left_hand_acme_thread",
+        "finger_count": 4,
+        "sections": [
+          {
+            "name": "hopper",
+            "length_inches": 12.0,
+            "pitch_to_diameter_ratio": 0.5
+          },
+          {
+            "name": "transition",
+            "length_inches": 6.0,
+            "pitch_to_diameter_ratio": 0.7
+          },
+          {
+            "name": "chute",
+            "length_inches": 18.0,
+            "pitch_to_diameter_ratio": 0.9
+          }
+        ]
+      },
+      "material": {
+        "name": "1045 Steel",
+        "specification": "AISI 1045",
+        "hardness_bhn": 170
+      }
+    },
+
+    "frame": {
+      "part_name": "Wheelbarrow Frame Assembly",
+      "source_file": "src/frame_model.py",
+      "quantity": 1,
+      "specifications": {
+        "tube_material": "Steel Pipe Schedule 40",
+        "tube_nominal_size": "1 inch",
+        "tube_od_inches": 1.315,
+        "tube_wall_inches": 0.133,
+        "frame_style": "single_axle_wheelbarrow"
+      },
+      "sub_components": [
+        {
+          "name": "main_longitudinal_tubes",
+          "quantity": 2,
+          "description": "Primary structural tubes running length of machine"
+        },
+        {
+          "name": "cross_members",
+          "quantity": 3,
+          "description": "Cross tubes connecting main tubes"
+        },
+        {
+          "name": "handle_tubes",
+          "quantity": 2,
+          "description": "Angled tubes for handles with rubber grips"
+        },
+        {
+          "name": "handle_crossbar",
+          "quantity": 1,
+          "description": "Connects handles at top"
+        },
+        {
+          "name": "axle_supports",
+          "quantity": 2,
+          "description": "Vertical supports for wheel axle"
+        },
+        {
+          "name": "hopper_support_verticals",
+          "quantity": 4,
+          "description": "Vertical supports for hopper structure"
+        },
+        {
+          "name": "motor_mount_support",
+          "quantity": 1,
+          "description": "Cross support for motor mounting plate"
+        }
+      ]
+    },
+
+    "hopper": {
+      "part_name": "Hopper Assembly",
+      "quantity": 1,
+      "specifications": {
+        "material": "14 gauge steel",
+        "thickness_inches": 0.0747,
+        "length_inches": 24.0,
+        "width_inches": 20.0,
+        "height_inches": 12.0,
+        "capacity_lbs": 120,
+        "shape": "tapered_funnel"
+      },
+      "features": [
+        "Tapered bottom feeding into mixing tube",
+        "Open top for material loading",
+        "Welded construction per AWS D1.3"
+      ]
+    },
+
+    "chute": {
+      "part_name": "Discharge Chute Assembly",
+      "quantity": 1,
+      "specifications": {
+        "material": "14 gauge steel",
+        "thickness_inches": 0.0747,
+        "length_inches": 16.0,
+        "inner_diameter_inches": 2.75,
+        "angle_range_degrees": {
+          "min": -5,
+          "max": 30
+        },
+        "pivot_positions": [15, 25, 35],
+        "swivel_range_degrees": 330
+      },
+      "features": [
+        "Three pivot positions for height adjustment",
+        "330-degree swivel for directional control",
+        "Housing for auger discharge section"
+      ]
+    },
+
+    "motor": {
+      "part_number": "MMXR-P209B",
+      "part_name": "Electric Gear Motor",
+      "quantity": 1,
+      "specifications": {
+        "power_watts": 250,
+        "voltage": "120V AC",
+        "running_amps": 1.6,
+        "protection_rating": "IP55",
+        "output_rpm": 118,
+        "gear_ratio": "12:1",
+        "output_shaft_diameter_mm": 15,
+        "frame_size_mm": 104
+      },
+      "probable_oem": {
+        "manufacturer": "Taibang Motor",
+        "brand": "VTV/GPG",
+        "model": "YN100-200 or 6IK250GN-SFT"
+      },
+      "features": [
+        "Forward/reverse operation",
+        "GFCI protection",
+        "Integrated gearbox"
+      ]
+    },
+
+    "motor_mount_plate": {
+      "part_name": "Motor Mounting Plate",
+      "quantity": 1,
+      "specifications": {
+        "material": "1/4 inch steel plate",
+        "length_inches": 6.0,
+        "width_inches": 6.0,
+        "bolt_pattern_inches": 4.5,
+        "bolt_holes": {
+          "quantity": 4,
+          "size": "5/16-18",
+          "grade": 8
+        }
+      }
+    },
+
+    "wheels": {
+      "part_name": "Flat-Free Wheels",
+      "manufacturer": "Marathon",
+      "model": "00210",
+      "quantity": 2,
+      "specifications": {
+        "tire_size": "4.10/3.50-4",
+        "diameter_inches": 10.5,
+        "width_inches": 3.3,
+        "material": "Solid polyurethane foam",
+        "tread_pattern": "Sawtooth",
+        "load_rating_lbs_per_tire": 300
+      },
+      "bearing": {
+        "type": "Shielded ball bearing",
+        "inner_diameter_inches": 0.625,
+        "outer_diameter_inches": 1.375
+      }
+    },
+
+    "axle": {
+      "part_name": "Wheel Axle",
+      "quantity": 1,
+      "specifications": {
+        "diameter_inches": 0.625,
+        "material": "Steel",
+        "nut_size": "5/8-11",
+        "nut_type": "Nylock",
+        "nut_torque_ft_lb": 135
+      }
+    },
+
+    "water_system": {
+      "part_name": "Water Delivery System",
+      "components": [
+        {
+          "part_number": "MMXR-P114",
+          "name": "Solenoid Valve",
+          "specifications": {
+            "size": "3/8 inch",
+            "material": "Brass",
+            "voltage": "120V AC",
+            "type": "Normally Closed, 2-way",
+            "pressure_rating_psi": 145
+          }
+        },
+        {
+          "part_number": "MMXR-P118",
+          "name": "Flow Control Valve",
+          "specifications": {
+            "size": "3/8 inch",
+            "type": "Needle valve"
+          }
+        },
+        {
+          "part_number": "MMXR-P122",
+          "name": "Nozzle Adapter",
+          "specifications": {
+            "size": "1/4 inch NPT Male"
+          }
+        },
+        {
+          "part_number": "MMXR-P108",
+          "name": "Tubing Primary",
+          "specifications": {
+            "od": "3/8 inch",
+            "length_inches": 34.25
+          }
+        }
+      ],
+      "system_specifications": {
+        "inlet_connection": "3/4 inch GHT (Garden Hose Thread)",
+        "minimum_pressure_psi": 30,
+        "recommended_pressure_psi": 40,
+        "nozzle_count": 2,
+        "flow_control_dial_range": "0-100"
+      }
+    },
+
+    "electrical_system": {
+      "part_name": "Electrical System",
+      "components": [
+        {
+          "part_number": "MMXR-P201",
+          "name": "GFCI Power Cord",
+          "specifications": {
+            "length_feet": 3,
+            "wire_gauge": "14 AWG",
+            "conductors": 3,
+            "jacket": "SJTW",
+            "plug_type": "3-prong grounded"
+          }
+        },
+        {
+          "part_number": "MMXR-P203",
+          "name": "Power Switch",
+          "specifications": {
+            "type": "DPDT",
+            "positions": ["Forward", "Off", "Reverse"]
+          }
+        }
+      ],
+      "system_specifications": {
+        "input_voltage": "120V AC",
+        "fuse": "15A fast-blow"
+      }
+    },
+
+    "quick_release_pins": {
+      "part_name": "Quick Release Pin Set",
+      "components": [
+        {
+          "part_number": "PCSAP001",
+          "name": "Auger Retention Pin",
+          "specifications": {
+            "size": "M5 x 60mm",
+            "type": "Quick-release"
+          }
+        },
+        {
+          "part_number": "PCSAP002",
+          "name": "Clevis Pin",
+          "specifications": {
+            "size": "M2 x 30mm",
+            "type": "Clevis"
+          }
+        }
+      ]
+    }
+  },
+
+  "assembly_relationships": {
+    "auger_to_motor": {
+      "connection_type": "threaded_coupling",
+      "coupling_thread": "Left-Hand Acme",
+      "notes": "Left-hand thread prevents auger from unscrewing during forward rotation"
+    },
+    "auger_to_housing": {
+      "connection_type": "clearance_fit",
+      "clearance_inches": 0.125,
+      "notes": "Auger rides on housing ID, no bearings in shaftless design"
+    },
+    "motor_to_frame": {
+      "connection_type": "bolted",
+      "bolt_size": "5/16-18",
+      "bolt_count": 4,
+      "bolt_grade": 8,
+      "torque_ft_lb": 25
+    },
+    "hopper_to_frame": {
+      "connection_type": "welded",
+      "weld_standard": "AWS D1.3",
+      "notes": "Sheet metal to tube welding"
+    },
+    "chute_to_frame": {
+      "connection_type": "pivot",
+      "swivel_range_degrees": 330,
+      "pivot_positions": 3,
+      "notes": "Allows angle and direction adjustment"
+    },
+    "wheels_to_frame": {
+      "connection_type": "axle_through",
+      "retention": "Nylock nut",
+      "torque_ft_lb": 135
+    }
+  },
+
+  "fastener_bom": {
+    "frame_assembly": [
+      {
+        "size": "1/4-20 x 1 inch",
+        "grade": 5,
+        "quantity": 20,
+        "application": "General assembly"
+      },
+      {
+        "size": "5/16-18 x 1 inch",
+        "grade": 5,
+        "quantity": 12,
+        "application": "Motor mounting"
+      },
+      {
+        "size": "3/8-16 x 1.5 inch",
+        "grade": 5,
+        "quantity": 8,
+        "application": "Heavy connections"
+      },
+      {
+        "size": "5/16-18 x 1 inch",
+        "grade": 8,
+        "quantity": 4,
+        "application": "Drive coupling"
+      },
+      {
+        "size": "5/8-11",
+        "type": "Nylock nut",
+        "quantity": 4,
+        "application": "Axle retention"
+      }
+    ]
+  },
+
+  "manufacturing_notes": {
+    "welding": {
+      "standard": "AWS D1.3 for sheet steel, AWS D1.1 Clause 9 for tubular",
+      "minimum_fillet": "1/8 inch",
+      "wire": "ER70S-6, 0.023-0.030 inch",
+      "gas": "75% Ar / 25% CO2"
+    },
+    "finish": {
+      "type": "Paint (not powder coat)",
+      "notes": "User reports indicate paint finish, prone to chipping"
+    },
+    "contract_manufacturer": {
+      "name": "Prince Manufacturing",
+      "location": "Ciudad Juarez, Mexico",
+      "certifications": ["ISO 9001:2015", "ISO 14001", "TS 16949"]
+    }
+  },
+
+  "cad_files": {
+    "auger": {
+      "parametric": "src/parametric_auger.py",
+      "openscad": "src/mudmixer_auger.scad",
+      "step": "src/mudmixer_auger.step",
+      "spec_json": "src/auger_spec.json"
+    },
+    "frame": {
+      "parametric": "src/frame_model.py",
+      "openscad": "src/mudmixer_frame.scad",
+      "step": "src/mudmixer_frame.step",
+      "spec_json": "src/frame_spec.json"
+    }
+  },
+
+  "performance_specifications": {
+    "throughput": {
+      "manufacturer_claim_bags_per_hour": 45,
+      "user_verified_bags_per_hour": "38-45",
+      "typical_real_world_bags_per_hour": "25-40"
+    },
+    "motor": {
+      "auger_speed_rpm": 118,
+      "output_torque_nm": "95-129",
+      "output_torque_ft_lb": "70-95"
+    },
+    "material_compatibility": {
+      "supported": [
+        "Concrete (up to 1/2 inch aggregate)",
+        "Mortar",
+        "Stucco",
+        "Grout",
+        "Sand topping mix"
+      ],
+      "not_supported": [
+        "Self-leveling compounds",
+        "Air crete / Foam",
+        "Epoxy products",
+        "Straight Portland cement"
+      ]
+    }
+  }
+}

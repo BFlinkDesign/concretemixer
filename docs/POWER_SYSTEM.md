@@ -8,6 +8,30 @@ The optimized MudMixer requires a dual-power system:
 
 ---
 
+## Stock Motor Specifications (Confirmed)
+
+| Parameter | MMXR-3221 | MMXR-3225 (Evolution) | Source |
+|-----------|-----------|----------------------|--------|
+| Motor Type | DC (water-sealed) | DC (water-sealed) | Patent |
+| Power Rating | 0.5 HP (373W) | 250W (IP55) | Specs |
+| Input Voltage | 120V AC | 120V AC | Specs |
+| Running Amps | 2.6 A | 1.6 A | Specs |
+| Auger Speed | ~118 RPM | ~118 RPM | Calculated |
+| Output Torque | ~95-129 N·m | ~95-129 N·m | Calculated |
+| Coupling | Left-Hand Acme Thread | Left-Hand Acme Thread | Patent |
+| Protection | Standard | GFCI Certified | Specs |
+| Cord Length | 3 ft | 3 ft | Specs |
+
+### Motor Part Number
+- **MMXR-P209**: Complete electric motor assembly — $867.51 (Foards)
+
+### IP55 Rating (Evolution)
+- Dust protected (limited ingress)
+- Water jet protected from any direction
+- Suitable for outdoor/jobsite use
+
+---
+
 ## 1. OPERATIONAL REQUIREMENTS
 
 ### Duty Cycle: HEAVY CONTINUOUS

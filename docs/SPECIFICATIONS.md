@@ -1,6 +1,37 @@
 # Technical Specifications
 
-## Overall Dimensions
+## Product Line Overview
+
+| Model | Status | Throughput | Motor | Hopper | Price |
+|-------|--------|------------|-------|--------|-------|
+| MMXR-3221 | Discontinued | 45+ bags/hr | 0.5 HP | 120 lbs | ~$2,995 |
+| MMXR-3225 (Evolution) | Current | 45+ bags/hr | 0.5 HP (250W) | 120 lbs | ~$3,695 |
+| **MudMixer Pro** | **NEW (Jan 2026)** | **3+ yd³/hr** | **1.5 HP** | **250 lbs** | **TBD** |
+
+---
+
+## MudMixer Pro (Announced World of Concrete 2026)
+
+> **Unveiled January 20-22, 2026** at World of Concrete, Las Vegas
+
+| Parameter | MudMixer Pro | Evolution (comparison) |
+|-----------|--------------|------------------------|
+| Output Capacity | 3+ cubic yards/hour | 1 cubic yard/hour |
+| Hopper Capacity | 250 lbs | 120 lbs |
+| Motor Power | 1.5 HP | 0.5 HP |
+| Wheels | 4 all-terrain tires | 2 flat-free tires |
+| Swivel | 360-degree | 330-degree |
+| Handle | Wrap-around | Standard |
+
+**Key Upgrade**: 3× throughput increase over Evolution model.
+
+**Source**: Equipment World, World of Concrete 2026 Innovative Product Awards
+
+---
+
+## MMXR-3225 Evolution Specifications
+
+### Overall Dimensions
 
 | Dimension | Value | Notes |
 |-----------|-------|-------|
@@ -31,12 +62,16 @@
 
 ## Motor Specifications
 
-| Feature | Description |
-|---------|-------------|
-| Motor Type | Water-sealed electric DC motor |
-| Operation | Forward and reverse |
-| Drive | High-torque electric drivetrain |
-| Coupling | Direct drive to auger shaft |
+| Feature | MMXR-3221 | MMXR-3225 (Evolution) |
+|---------|-----------|----------------------|
+| Motor Type | Water-sealed DC | Water-sealed DC |
+| Motor Rating | 0.5 HP (373W) | 250W (IP55-rated) |
+| Running Amps | 2.6 A | 1.6 A |
+| Auger Speed | ~118 RPM | ~118 RPM |
+| Output Torque | ~95-129 N·m (70-95 ft-lb) | ~95-129 N·m |
+| Operation | Forward/Reverse | Forward/Reverse |
+| Coupling | Left-Hand Acme Thread | Left-Hand Acme Thread |
+| Protection | Standard | GFCI Certified |
 
 ## Performance
 
@@ -95,3 +130,59 @@
 ## Warranty
 
 - 2-year limited warranty covering manufacturing defects and key components
+
+---
+
+## Evolution Model Upgrades (vs MMXR-3221)
+
+The MMXR-3221 was **discontinued** after contractor feedback. Evolution upgrades:
+
+| Component | MMXR-3221 | MMXR-3225 Evolution |
+|-----------|-----------|---------------------|
+| Warranty | 1 year | 2 years |
+| Electrical | Standard | GFCI Certified |
+| Solenoid | Standard brass | Waterproof |
+| Plumbing | Standard | Stainless steel fittings |
+| Chute | Standard steel | Reinforced steel |
+| Chute Flap | Basic | Improved flow control |
+| Chute Guards | Basic | Secured/enhanced |
+| Pivot Latch | 2 positions | 3 positions |
+| Electrical Boxes | Standard | Watertight |
+
+**Note**: MMXR-3221 spare parts are NOT compatible with Evolution series.
+
+---
+
+## Real-World Throughput Data
+
+| Scenario | Bags/Hour | Notes |
+|----------|-----------|-------|
+| Manufacturer Claim | 45+ | Optimal conditions |
+| Verified Tests | 38-45 | Continuous feeding |
+| Typical Real-World | 25-40 | With form work pauses |
+| Solo Operation | 16-25 | One person workflow |
+| Two-Person Crew | 35-45 | Optimal configuration |
+
+**Best verified result**: 26 bags in 35 minutes = 44.6 bags/hour
+
+---
+
+## Company Information
+
+| Detail | Value |
+|--------|-------|
+| Manufacturer | MudMixer, LLC (fka Red Dog Mobile Shelters, LLC) |
+| Founded | 2018 |
+| Headquarters | Lubbock, TX |
+| Manufacturing | Prince Manufacturing, Ciudad Juarez, Mexico |
+| Support Phone | (806) 515-4683 |
+| Recognition | Inc. 5000 #340 (2025), Concrete Contractor 2022 Top Products |
+
+---
+
+## Sources
+
+- [MudMixer Specifications](https://mudmixer.com/pages/specs)
+- [MudMixer Evolution](https://mudmixer.com/products/mudmixer-evolution)
+- [World of Concrete 2026 - MudMixer Pro](https://www.equipmentworld.com/world-of-concrete/article/15800889/what-to-see-at-world-of-concrete-2026)
+- [Home Depot - MMXR-3225](https://www.homedepot.com/p/MUDMIXER-Heavy-Duty-Portable-Continuous-Concrete-Mixer-Evolution-MMXR-3225/335811481)

@@ -46,11 +46,16 @@ This document identifies the **KNOWN** specifications from public sources vs **U
 | Parameter | Value | Source | Confidence |
 |-----------|-------|--------|------------|
 | Type | Shaftless Helical | Patent 10,259,140 | ★★★★★ |
+| Helix Direction | Right-handed | Patent 10,259,140 | ★★★★★ |
 | P/D Ratio (Hopper) | 0.2 - 0.9 | Patent 10,259,140 | ★★★★☆ |
 | P/D Ratio (Preferred) | 0.5 - 0.8 | Patent 11,285,639 | ★★★★☆ |
 | P/D Ratio (Chute) | 0.6 - 1.0 | Patent 11,285,639 | ★★★★☆ |
 | Variable Pitch | Yes (increasing) | Patent 10,259,140 | ★★★★★ |
 | Fingers | Inward-extending | Patent 10,259,140 | ★★★★★ |
+| **Finger Count** | **4 (preferred)** | Patent 10,259,140 Claim | ★★★★☆ |
+| Finger at Aperture | Yes (1 finger at transition) | Patent 10,259,140 Claim 17 | ★★★★☆ |
+| Auger Length | ~36 inches | Parts listing | ★★★☆☆ |
+| Operating Speed | ~118 RPM | Calculated from throughput | ★★★☆☆ |
 
 ### 1.6 Chute Specifications
 | Parameter | Value | Source | Confidence |
@@ -77,8 +82,38 @@ This document identifies the **KNOWN** specifications from public sources vs **U
 | Parameter | Value | Source | Confidence |
 |-----------|-------|--------|------------|
 | Min Pressure | 30 PSI | MudMixer Specs | ★★★★★ |
+| Recommended Pressure | 40 PSI | Owner's Manual | ★★★★★ |
 | Nozzle Count | 2 (dual) | MudMixer Specs | ★★★★★ |
-| Flow Control | Adjustable dial | MudMixer Specs | ★★★★★ |
+| Flow Control | Adjustable dial (0-100) | MudMixer Specs | ★★★★★ |
+| Dial Setting (Concrete) | 35-50 | MudMixer Guide | ★★★★☆ |
+| **Solenoid Valve** | **3/8" Brass (MMXR-P114)** | Parts Listing | ★★★★★ |
+| Nozzle Adapter | 1/4" NPT Male (MMXR-P122) | Parts Listing | ★★★★★ |
+| Tubing | 3/8" OD (MMXR-P108) | Parts Listing | ★★★★★ |
+| Solenoid (Evolution) | Waterproof | Product Specs | ★★★★★ |
+
+### 1.10 Motor Performance (Newly Confirmed)
+| Parameter | Value | Source | Confidence |
+|-----------|-------|--------|------------|
+| Auger Speed | ~118 RPM | Engineering calculation | ★★★☆☆ |
+| Output Torque | 95-129 N·m (70-95 ft-lb) | Calculated from HP/RPM | ★★★☆☆ |
+| Running Amps (Evolution) | 1.6 A | Product specs | ★★★★★ |
+| Motor Protection | IP55 | Evolution specs | ★★★★★ |
+| Residence Time | ~13 seconds | Throughput analysis | ★★★☆☆ |
+
+### 1.11 Replacement Parts (Confirmed Part Numbers)
+| Part | Part Number | Description | Price |
+|------|-------------|-------------|-------|
+| Solenoid Valve | MMXR-P114 | 3/8" Brass | $144.00 |
+| Nozzle Adapter | MMXR-P122 | 1/4" NPT Male Spray Head | $24.54 |
+| Straight Adapter | MMXR-P121 | 3/8" OD × 1/4" NPT Female | $30.54 |
+| Tubing | MMXR-P108 | 3/8" OD × 34.25" | $7.83 |
+| 90° Elbow | MMXR-P113 | 3/8" NPT Quick Connect | $36.52 |
+| 90° Brass Elbow | MMXR-P106 | 1/2" NPT Female | $9.88 |
+| Power Cord | MMXR-P201 | GFCI Plug | $52.64 |
+| Electric Motor | MMXR-P209 | Complete motor assembly | $867.51 |
+| Auger Assembly | MMXR-P212 | Complete auger | — |
+| Auger Pin | PCSAP001 | M5×60mm fast pin | $13.13 |
+| Clevis Pin | PCSAP002 | M2×30mm R | $13.13 |
 
 ---
 
