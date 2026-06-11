@@ -47,10 +47,25 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - [Assembly Drawing](./drawings/ASSEMBLY_DRAWING.md) - Side/front/top views
 - [Auger Drawing](./drawings/AUGER_DRAWING.md) - Shaftless auger geometry
 - [Electrical Schematic](./drawings/ELECTRICAL_SCHEMATIC.md) - Drive system wiring
+- [Auger 3D Render](./drawings/AUGER_RENDER.png) - Generated from `src/auger_cad.py`
 
 ### Computational Tools (`src/`)
-- [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework
-- [requirements.txt](./src/requirements.txt) - Python dependencies
+- [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework (CLI)
+- [auger_cad.py](./src/auger_cad.py) - 3D mesh generation, STL export, rendering
+- [requirements.txt](./src/requirements.txt) - Python dependencies (core is stdlib-only)
+
+```bash
+# Full design study for 12-hour jobsite duty:
+python src/auger_optimizer.py --housing-id 6.0 --duty jobsite_12hr
+
+# Export the optimized auger as a 3D-printable STL plus a preview render:
+python src/auger_optimizer.py --stl auger.stl --render auger.png
+
+# Run the test suite (requires pytest):
+python -m pytest src/
+```
+
+![Auger render](./drawings/AUGER_RENDER.png)
 
 ## Operation Principle
 
