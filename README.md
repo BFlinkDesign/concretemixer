@@ -42,16 +42,21 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - [Bill of Materials](./docs/BOM.md) - Component list for replication
 - [Engineering Calculations](./docs/ENGINEERING.md) - Design calculations and principles
 - [**Data Requirements**](./docs/DATA_REQUIREMENTS.md) - ⚠️ Known vs unknown specs, critical gaps
+- [**Design Insights**](./docs/DESIGN_INSIGHTS.md) - 🔬 Computed discoveries (implied 6.5" bore, spec inconsistencies) and enhancement roadmap
 
 ### Technical Drawings (`drawings/`)
 - [Assembly Drawing](./drawings/ASSEMBLY_DRAWING.md) - Side/front/top views
 - [Auger Drawing](./drawings/AUGER_DRAWING.md) - Shaftless auger geometry
 - [Electrical Schematic](./drawings/ELECTRICAL_SCHEMATIC.md) - Drive system wiring
 - [Auger 3D Render](./drawings/AUGER_RENDER.png) - Generated from `src/auger_cad.py`
+- [Full Machine Render](./drawings/MIXER_ASSEMBLY_RENDER.png) - Four-view assembly sheet
+- [Exploded View](./drawings/MIXER_EXPLODED_RENDER.png) - Component breakdown
 
 ### Computational Tools (`src/`)
 - [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework (CLI)
-- [auger_cad.py](./src/auger_cad.py) - 3D mesh generation, STL export, rendering
+- [auger_cad.py](./src/auger_cad.py) - Auger mesh generation, STL export, rendering
+- [mixer_cad.py](./src/mixer_cad.py) - **Full-machine parametric CAD** with validated mass, CG, stability, clearances
+- [mixer_analysis.py](./src/mixer_analysis.py) - Cross-specification physics analysis
 - [requirements.txt](./src/requirements.txt) - Python dependencies (core is stdlib-only)
 
 ```bash
@@ -61,9 +66,19 @@ python src/auger_optimizer.py --housing-id 6.0 --duty jobsite_12hr
 # Export the optimized auger as a 3D-printable STL plus a preview render:
 python src/auger_optimizer.py --stl auger.stl --render auger.png
 
+# Build and validate the COMPLETE machine, export per-component STLs:
+python src/mixer_cad.py --report --stl-dir cad_out --render assembly.png --exploded exploded.png
+
+# Cross-specification discovery analysis (implied bore size, power audit...):
+python src/mixer_analysis.py
+
 # Run the test suite (requires pytest):
 python -m pytest src/
 ```
+
+![Full machine assembly](./drawings/MIXER_ASSEMBLY_RENDER.png)
+
+![Exploded view](./drawings/MIXER_EXPLODED_RENDER.png)
 
 ![Auger render](./drawings/AUGER_RENDER.png)
 
