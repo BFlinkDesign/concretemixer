@@ -13,8 +13,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install dependencies
-        run: pip install pytest matplotlib
-      - name: Run test suite (99 tests)
+        run: pip install pytest matplotlib ruff mypy
+      - name: Lint (ruff)
+        run: ruff check src/
+      - name: Type check (mypy)
+        run: mypy
+      - name: Run test suite
         run: python -m pytest src/ -q
       - name: Full-machine CAD validation (baseline 6.0" bore)
         run: python src/mixer_cad.py --report

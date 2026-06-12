@@ -77,11 +77,13 @@ class TestThermalOutcomes:
     def test_lunch_break_thermal_recovery(self, result):
         """Temperatures must dip during the hour-6 break."""
         in_break = [
-            temp for t, temp in zip(result.time_hr, result.temp_steel_f)
+            temp
+            for t, temp in zip(result.time_hr, result.temp_steel_f, strict=True)
             if 6.3 < t < 6.5
         ]
         running = [
-            temp for t, temp in zip(result.time_hr, result.temp_steel_f)
+            temp
+            for t, temp in zip(result.time_hr, result.temp_steel_f, strict=True)
             if 5.0 < t < 6.0
         ]
         assert min(in_break) < min(running) - 10
@@ -100,7 +102,9 @@ class TestElectricalOutcomes:
 
     def test_current_drops_during_break(self, result):
         break_amps = [
-            a for t, a in zip(result.time_hr, result.amps) if 6.1 < t < 6.4
+            a
+            for t, a in zip(result.time_hr, result.amps, strict=True)
+            if 6.1 < t < 6.4
         ]
         assert max(break_amps) == 0.0
 

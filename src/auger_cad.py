@@ -22,42 +22,38 @@ Dependencies:
 
 import argparse
 import math
-import struct
-from typing import List, Optional, Tuple
 
-from auger_optimizer import AugerGeometry, FingerConfig, FingerMaterial
+from auger_optimizer import AugerGeometry, FingerConfig
+from geometry import (
+    Triangle,
+    Vec3,
+    cross,
+    mesh_volume,
+    normalize,
+    sub,
+    write_binary_stl,
+)
 
-Vec3 = Tuple[float, float, float]
-Triangle = Tuple[Vec3, Vec3, Vec3]
+__all__ = [
+    "Triangle",
+    "Vec3",
+    "build_auger_mesh",
+    "build_finger_mesh",
+    "build_flight_mesh",
+    "mesh_volume",
+    "render_mesh",
+    "write_binary_stl",
+]
 
 # Minimum open-center radius preserved at finger tips. The shaftless
 # design's aggregate-handling advantage depends on keeping the center open.
 MIN_OPEN_CENTER_RADIUS = 0.3  # inches
 
 
-def _sub(a: Vec3, b: Vec3) -> Vec3:
-    return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
-
-
-def _cross(a: Vec3, b: Vec3) -> Vec3:
-    return (
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0],
-    )
-
-
-def _normalize(v: Vec3) -> Vec3:
-    mag = math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
-    if mag == 0:
-        return (0.0, 0.0, 0.0)
-    return (v[0] / mag, v[1] / mag, v[2] / mag)
-
-
 def _sweep_rings(
     geometry: AugerGeometry,
     segments_per_turn: int,
-) -> List[Tuple[float, float]]:
+) -> list[tuple[float, float]]:
     """
     Integrate the helix axial position over sweep angle.
 
@@ -87,7 +83,7 @@ def _sweep_rings(
 
 def _ring_corners(
     theta: float, z: float, r_inner: float, r_outer: float, thickness: float
-) -> List[Vec3]:
+) -> list[Vec3]:
     """
     Cross-section corners at one sweep station.
 
@@ -106,7 +102,7 @@ def _ring_corners(
 def build_flight_mesh(
     geometry: AugerGeometry,
     segments_per_turn: int = 64,
-) -> List[Triangle]:
+) -> list[Triangle]:
     """
     Build a watertight triangle mesh of the helical flight ribbon.
 
@@ -127,11 +123,11 @@ def build_flight_mesh(
         for theta, z in stations
     ]
 
-    triangles: List[Triangle] = []
+    triangles: list[Triangle] = []
 
     # Side surfaces: one quad strip per cross-section edge.
     # Winding (u_i, u_j, v_j, v_i) yields outward normals for a CCW section.
-    for ring_a, ring_b in zip(rings, rings[1:]):
+    for ring_a, ring_b in zip(rings, rings[1:], strict=False):
         for k in range(4):
             u_a, v_a = ring_a[k], ring_a[(k + 1) % 4]
             u_b, v_b = ring_b[k], ring_b[(k + 1) % 4]
@@ -154,7 +150,7 @@ def build_finger_mesh(
     fingers: FingerConfig,
     segments_per_turn: int = 64,
     sides: int = 8,
-) -> List[Triangle]:
+) -> list[Triangle]:
     """
     Build mixing fingers as closed octagonal prisms projecting inward
     from the flight inner edge, distributed evenly along the auger.
@@ -171,7 +167,7 @@ def build_finger_mesh(
     max_reach = base_radius - MIN_OPEN_CENTER_RADIUS
     length = min(fingers.length + (base_radius - r_inner), max_reach)
 
-    triangles: List[Triangle] = []
+    triangles: list[Triangle] = []
     total = geometry.total_length
 
     for k in range(fingers.count):
@@ -182,7 +178,7 @@ def build_finger_mesh(
         # Radially-inward axis with an orthonormal section basis.
         axis = (-cos_t, -sin_t, 0.0)
         e1 = (0.0, 0.0, 1.0)
-        e2 = _cross(axis, e1)
+        e2 = cross(axis, e1)
 
         center = (
             base_radius * cos_t,
@@ -222,9 +218,9 @@ def build_finger_mesh(
 
 def build_auger_mesh(
     geometry: AugerGeometry,
-    fingers: Optional[FingerConfig] = None,
+    fingers: FingerConfig | None = None,
     segments_per_turn: int = 64,
-) -> List[Triangle]:
+) -> list[Triangle]:
     """Build the complete auger mesh: flight ribbon plus mixing fingers."""
     mesh = build_flight_mesh(geometry, segments_per_turn)
     if fingers is not None and fingers.count > 0:
@@ -232,36 +228,8 @@ def build_auger_mesh(
     return mesh
 
 
-def mesh_volume(triangles: List[Triangle]) -> float:
-    """
-    Signed volume via divergence theorem (cubic inches).
-
-    Positive for consistently outward-wound watertight meshes.
-    """
-    volume = 0.0
-    for v0, v1, v2 in triangles:
-        cross = _cross(v1, v2)
-        volume += (v0[0] * cross[0] + v0[1] * cross[1] + v0[2] * cross[2]) / 6.0
-    return volume
-
-
-def write_binary_stl(
-    triangles: List[Triangle],
-    path: str,
-    solid_name: str = "MudMixer shaftless auger",
-) -> None:
-    """Write triangles to a binary STL file."""
-    header = solid_name.encode("ascii", errors="replace")[:80].ljust(80, b"\0")
-    with open(path, "wb") as f:
-        f.write(header)
-        f.write(struct.pack("<I", len(triangles)))
-        for v0, v1, v2 in triangles:
-            normal = _normalize(_cross(_sub(v1, v0), _sub(v2, v0)))
-            f.write(struct.pack("<12fH", *normal, *v0, *v1, *v2, 0))
-
-
 def render_mesh(
-    triangles: List[Triangle],
+    triangles: list[Triangle],
     path: str,
     elev: float = 18.0,
     azim: float = -55.0,
@@ -277,11 +245,11 @@ def render_mesh(
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
     # Flat-shade each facet against a fixed light direction.
-    light = _normalize((0.4, -0.6, 0.7))
+    light = normalize((0.4, -0.6, 0.7))
     base = (0.54, 0.61, 0.67)  # steel grey
     face_colors = []
     for v0, v1, v2 in triangles:
-        normal = _normalize(_cross(_sub(v1, v0), _sub(v2, v0)))
+        normal = normalize(cross(sub(v1, v0), sub(v2, v0)))
         intensity = abs(
             normal[0] * light[0] + normal[1] * light[1] + normal[2] * light[2]
         )
@@ -325,7 +293,7 @@ def render_mesh(
     plt.close(fig)
 
 
-def main(argv: Optional[List[str]] = None):
+def main(argv: list[str] | None = None) -> None:
     """Generate STL/render for the default optimized geometry."""
     parser = argparse.ArgumentParser(
         description="Export MudMixer auger mesh as STL and/or PNG render"

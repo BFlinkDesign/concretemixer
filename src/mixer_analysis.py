@@ -17,7 +17,7 @@ Dependencies: none (standard library only)
 """
 
 import math
-from typing import Dict, Optional
+from typing import Any
 
 from auger_optimizer import AugerGeometry, AugerOptimizer
 
@@ -30,11 +30,11 @@ WATER_QT_PER_BAG = 3.5
 
 
 def throughput_analysis(
-    geometry: Optional[AugerGeometry] = None,
+    geometry: AugerGeometry | None = None,
     rpm: float = 27.0,
     fill_efficiency: float = 0.35,
     claimed_bags_hr: float = 45.0,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Validate the claimed 45 bags/hr (~1 yd³/hr) against screw-conveyor
     physics (CEMA-style volumetric flow, docs/AUGER_DESIGN.md):
@@ -80,7 +80,7 @@ def implied_auger_size(
     fill_efficiency: float = 0.35,
     pd_ratio_chute: float = 0.85,
     clearance_per_side: float = 0.75,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Invert the throughput equation to estimate the REAL auger diameter
     from the manufacturer's performance claim.
@@ -109,7 +109,7 @@ def converged_design(
     claimed_bags_hr: float = 45.0,
     tolerance: float = 0.01,
     max_iterations: int = 10,
-) -> Dict[str, object]:
+) -> dict[str, Any]:
     """
     Close the D1 discovery loop: iterate the housing bore until the
     generative design's own geometry reproduces the manufacturer's
@@ -162,7 +162,7 @@ def water_demand(
     supply_psi: float = 30.0,
     nozzle_count: int = 2,
     discharge_coefficient: float = 0.9,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Water mass balance at rated throughput, and the spray-nozzle orifice
     size that delivers it at the specified 30 PSI minimum supply.
@@ -198,7 +198,7 @@ def drivetrain_analysis(
     output_rpm: float = 27.0,
     motor_power_hp: float = 0.5,
     gearbox_efficiency: float = 0.85,
-) -> Dict[str, float]:
+) -> dict[str, Any]:
     """
     The spec sheet says "direct drive", yet a 0.5 HP DC motor natively
     runs 1750-3600 RPM. Quantify the reduction stage that must exist
@@ -225,7 +225,7 @@ def power_audit(
     input_volts: float = 120.0,
     rated_amps: float = 2.6,
     drivetrain_efficiency: float = 0.75,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Cross-check the published electrical ratings against each other.
 
@@ -254,7 +254,7 @@ def hopper_capacity_check(
     hopper_volume_in3: float,
     rated_capacity_lb: float = 120.0,
     bulk_density_lb_ft3: float = DRY_MIX_DENSITY_LB_FT3,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Does the modeled hopper geometry actually hold the rated 120 lb
     (2 × 60 lb bags) of dry mix?
@@ -297,7 +297,7 @@ def main():
           f"({throughput['throughput_yd3_hr']:.2f} yd³/hr)")
     print(f"    Claimed 45 bags/hr implies η = "
           f"{throughput['implied_fill_efficiency']:.2f} "
-          f"→ {'CONSISTENT with CEMA inclined-screw range' if throughput['claim_consistent'] else 'INCONSISTENT'}")
+          f"→ {'CONSISTENT with CEMA inclined-screw range' if throughput['claim_consistent'] else 'INCONSISTENT'}")  # noqa: E501
 
     size = implied_auger_size()
     print("\n[1b] IMPLIED TRUE AUGER SIZE (inverting the claim at η=0.35)")
@@ -317,7 +317,7 @@ def main():
           f"vs claimed {converged['claimed_bags_hr']:.0f} → "
           f"{'SELF-CONSISTENT' if converged['self_consistent'] else 'NOT CONVERGED'}; "
           f"patent P/D checks: "
-          f"{'PASS' if not converged['patent_validation_issues'] else converged['patent_validation_issues']}")
+          f"{'PASS' if not converged['patent_validation_issues'] else converged['patent_validation_issues']}")  # noqa: E501
 
     water = water_demand()
     print("\n[2] WATER MASS BALANCE")
@@ -339,7 +339,7 @@ def main():
     print(f"    Claimed: 0.5 HP out ({power['rated_output_watts']:.0f} W) on "
           f"2.6 A × 120 V in ({power['input_watts_at_rated_amps']:.0f} W)")
     print(f"    Implied efficiency {power['implied_efficiency']*100:.0f}% → "
-          f"{'physically possible' if power['specs_consistent'] else 'IMPOSSIBLE (output exceeds input)'}")
+          f"{'physically possible' if power['specs_consistent'] else 'IMPOSSIBLE (output exceeds input)'}")  # noqa: E501
     print(f"    Full 0.5 HP at 75% drive efficiency needs "
           f"{power['amps_needed_at_full_load']:.1f} A; at 2.6 A the motor "
           f"delivers at most {power['max_continuous_hp_at_rated_amps']:.2f} HP")

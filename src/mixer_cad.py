@@ -29,22 +29,31 @@ Dependencies:
 import argparse
 import math
 import os
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
-from auger_cad import (
+from auger_cad import build_auger_mesh, render_mesh  # noqa: F401  (render_mesh re-exported)
+from auger_optimizer import AugerOptimizer
+from geometry import (
     Triangle,
     Vec3,
-    _cross,
-    _normalize,
-    _sub,
-    build_auger_mesh,
+    bounding_box,
+    box,
+    cross,
+    cylinder,
+    is_watertight,
+    mesh_centroid,
     mesh_volume,
+    normalize,
+    pipe_between,
+    rect_funnel,
+    rot_x,
+    rot_y,
+    sub,
+    transform,
+    tube,
     write_binary_stl,
 )
-from auger_optimizer import AugerOptimizer
-
-Matrix3 = Tuple[Vec3, Vec3, Vec3]
 
 # ---------------------------------------------------------------------------
 # Specification targets (docs/SPECIFICATIONS.md)
@@ -78,193 +87,6 @@ UNMODELED_ALLOWANCE_LB = (8.0, 22.0)
 
 
 # ---------------------------------------------------------------------------
-# Mesh primitives (all watertight, outward-wound)
-# ---------------------------------------------------------------------------
-
-def flip(triangles: List[Triangle]) -> List[Triangle]:
-    """Reverse the orientation of every triangle."""
-    return [(a, c, b) for a, b, c in triangles]
-
-
-def rot_y(angle_deg: float) -> Matrix3:
-    a = math.radians(angle_deg)
-    c, s = math.cos(a), math.sin(a)
-    return ((c, 0.0, s), (0.0, 1.0, 0.0), (-s, 0.0, c))
-
-
-def rot_x(angle_deg: float) -> Matrix3:
-    a = math.radians(angle_deg)
-    c, s = math.cos(a), math.sin(a)
-    return ((1.0, 0.0, 0.0), (0.0, c, -s), (0.0, s, c))
-
-
-def transform(
-    triangles: List[Triangle],
-    rotation: Optional[Matrix3] = None,
-    translation: Vec3 = (0.0, 0.0, 0.0),
-) -> List[Triangle]:
-    """Apply rotation then translation to every vertex."""
-    def apply(v: Vec3) -> Vec3:
-        if rotation is not None:
-            v = (
-                rotation[0][0] * v[0] + rotation[0][1] * v[1] + rotation[0][2] * v[2],
-                rotation[1][0] * v[0] + rotation[1][1] * v[1] + rotation[1][2] * v[2],
-                rotation[2][0] * v[0] + rotation[2][1] * v[1] + rotation[2][2] * v[2],
-            )
-        return (v[0] + translation[0], v[1] + translation[1], v[2] + translation[2])
-
-    return [(apply(a), apply(b), apply(c)) for a, b, c in triangles]
-
-
-def box(lx: float, ly: float, lz: float) -> List[Triangle]:
-    """Axis-aligned box centered at the origin."""
-    x, y, z = lx / 2, ly / 2, lz / 2
-    p = [
-        (-x, -y, -z), (x, -y, -z), (x, y, -z), (-x, y, -z),
-        (-x, -y, z), (x, -y, z), (x, y, z), (-x, y, z),
-    ]
-    quads = [
-        (0, 3, 2, 1),  # bottom (-z)
-        (4, 5, 6, 7),  # top (+z)
-        (0, 1, 5, 4),  # front (-y)
-        (2, 3, 7, 6),  # back (+y)
-        (1, 2, 6, 5),  # right (+x)
-        (3, 0, 4, 7),  # left (-x)
-    ]
-    triangles = []
-    for a, b, c, d in quads:
-        triangles.append((p[a], p[b], p[c]))
-        triangles.append((p[a], p[c], p[d]))
-    return triangles
-
-
-def cylinder(radius: float, height: float, segments: int = 32) -> List[Triangle]:
-    """Closed cylinder along +z from z=0 to z=height."""
-    bottom = [
-        (radius * math.cos(2 * math.pi * j / segments),
-         radius * math.sin(2 * math.pi * j / segments), 0.0)
-        for j in range(segments)
-    ]
-    top = [(x, y, height) for x, y, _ in bottom]
-
-    triangles = []
-    for j in range(segments):
-        jn = (j + 1) % segments
-        triangles.append((bottom[j], bottom[jn], top[jn]))
-        triangles.append((bottom[j], top[jn], top[j]))
-
-    c_bot, c_top = (0.0, 0.0, 0.0), (0.0, 0.0, height)
-    for j in range(segments):
-        jn = (j + 1) % segments
-        triangles.append((c_bot, bottom[jn], bottom[j]))
-        triangles.append((c_top, top[j], top[jn]))
-    return triangles
-
-
-def tube(
-    outer_radius: float, inner_radius: float, height: float, segments: int = 48
-) -> List[Triangle]:
-    """Closed annular tube (pipe with wall) along +z from z=0 to z=height."""
-    def ring(radius: float, z: float) -> List[Vec3]:
-        return [
-            (radius * math.cos(2 * math.pi * j / segments),
-             radius * math.sin(2 * math.pi * j / segments), z)
-            for j in range(segments)
-        ]
-
-    ob, ot = ring(outer_radius, 0.0), ring(outer_radius, height)
-    ib, it = ring(inner_radius, 0.0), ring(inner_radius, height)
-
-    triangles = []
-    for j in range(segments):
-        jn = (j + 1) % segments
-        # Outer wall faces outward, inner wall faces the bore.
-        triangles.append((ob[j], ob[jn], ot[jn]))
-        triangles.append((ob[j], ot[jn], ot[j]))
-        triangles.append((ib[jn], ib[j], it[j]))
-        triangles.append((ib[jn], it[j], it[jn]))
-        # Annular end rings: top faces +z, bottom faces -z.
-        triangles.append((ot[j], ot[jn], it[jn]))
-        triangles.append((ot[j], it[jn], it[j]))
-        triangles.append((ob[jn], ob[j], ib[j]))
-        triangles.append((ob[jn], ib[j], ib[jn]))
-    return triangles
-
-
-def rect_funnel(
-    top_lx: float, top_ly: float,
-    bottom_lx: float, bottom_ly: float,
-    height: float, wall: float,
-) -> List[Triangle]:
-    """
-    Open-top, open-bottom rectangular hopper shell with wall thickness.
-
-    Base aperture is at z=0, rim at z=height. Both openings are framed by
-    annular rings so the shell is a closed watertight solid.
-    """
-    def rect(lx: float, ly: float, z: float) -> List[Vec3]:
-        x, y = lx / 2, ly / 2
-        # Counterclockwise viewed from +z
-        return [(x, y, z), (-x, y, z), (-x, -y, z), (x, -y, z)]
-
-    o_top = rect(top_lx, top_ly, height)
-    o_bot = rect(bottom_lx, bottom_ly, 0.0)
-    i_top = rect(top_lx - 2 * wall, top_ly - 2 * wall, height)
-    i_bot = rect(bottom_lx - 2 * wall, bottom_ly - 2 * wall, 0.0)
-
-    triangles = []
-    for k in range(4):
-        kn = (k + 1) % 4
-        # Outer wall (outward) and inner wall (faces the cavity)
-        triangles.append((o_bot[k], o_bot[kn], o_top[kn]))
-        triangles.append((o_bot[k], o_top[kn], o_top[k]))
-        triangles.append((i_bot[kn], i_bot[k], i_top[k]))
-        triangles.append((i_bot[kn], i_top[k], i_top[kn]))
-        # Rim ring (+z) and aperture ring (-z)
-        triangles.append((o_top[k], o_top[kn], i_top[kn]))
-        triangles.append((o_top[k], i_top[kn], i_top[k]))
-        triangles.append((o_bot[kn], o_bot[k], i_bot[k]))
-        triangles.append((o_bot[kn], i_bot[k], i_bot[kn]))
-    return triangles
-
-
-def is_watertight(triangles: List[Triangle]) -> bool:
-    """True if every directed edge is paired with exactly one reverse edge."""
-    from collections import Counter
-    edges = Counter()
-    for v0, v1, v2 in triangles:
-        edges[(v0, v1)] += 1
-        edges[(v1, v2)] += 1
-        edges[(v2, v0)] += 1
-    return all(
-        count == 1 and edges[(b, a)] == 1 for (a, b), count in edges.items()
-    )
-
-
-def mesh_centroid(triangles: List[Triangle]) -> Vec3:
-    """Volume centroid via signed tetrahedron decomposition."""
-    volume = 0.0
-    cx = cy = cz = 0.0
-    for v0, v1, v2 in triangles:
-        cross = _cross(v1, v2)
-        tet = (v0[0] * cross[0] + v0[1] * cross[1] + v0[2] * cross[2]) / 6.0
-        volume += tet
-        cx += tet * (v0[0] + v1[0] + v2[0]) / 4.0
-        cy += tet * (v0[1] + v1[1] + v2[1]) / 4.0
-        cz += tet * (v0[2] + v1[2] + v2[2]) / 4.0
-    if volume == 0:
-        return (0.0, 0.0, 0.0)
-    return (cx / volume, cy / volume, cz / volume)
-
-
-def bounding_box(triangles: List[Triangle]) -> Tuple[Vec3, Vec3]:
-    xs = [v[0] for tri in triangles for v in tri]
-    ys = [v[1] for tri in triangles for v in tri]
-    zs = [v[2] for tri in triangles for v in tri]
-    return (min(xs), min(ys), min(zs)), (max(xs), max(ys), max(zs))
-
-
-# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 
@@ -272,9 +94,9 @@ def bounding_box(triangles: List[Triangle]) -> Tuple[Vec3, Vec3]:
 class Component:
     """One rigid part of the mixer with material and render metadata."""
     name: str
-    triangles: List[Triangle]
+    triangles: list[Triangle]
     density: float                       # lb/in³
-    color: Tuple[float, float, float]
+    color: tuple[float, float, float]
     explode_dir: Vec3 = (0.0, 0.0, 0.0)  # unit offset for exploded views
 
     @property
@@ -290,33 +112,7 @@ class Component:
         return mesh_centroid(self.triangles)
 
 
-def _pipe_between(p0: Vec3, p1: Vec3, radius: float = 0.5,
-                  segments: int = 20) -> List[Triangle]:
-    """Solid rod from p0 to p1 (frame pipe member)."""
-    d = _sub(p1, p0)
-    length = math.sqrt(d[0] ** 2 + d[1] ** 2 + d[2] ** 2)
-    mesh = cylinder(radius, length, segments)
-
-    # Rotate +z onto d via Rodrigues' construction
-    z = (0.0, 0.0, 1.0)
-    dn = _normalize(d)
-    axis = _cross(z, dn)
-    s = math.sqrt(axis[0] ** 2 + axis[1] ** 2 + axis[2] ** 2)
-    c = z[0] * dn[0] + z[1] * dn[1] + z[2] * dn[2]
-    if s < 1e-9:
-        rotation = None if c > 0 else rot_x(180.0)
-    else:
-        ax = _normalize(axis)
-        k = 1 - c
-        rotation = (
-            (c + ax[0] * ax[0] * k, ax[0] * ax[1] * k - ax[2] * s, ax[0] * ax[2] * k + ax[1] * s),
-            (ax[1] * ax[0] * k + ax[2] * s, c + ax[1] * ax[1] * k, ax[1] * ax[2] * k - ax[0] * s),
-            (ax[2] * ax[0] * k - ax[1] * s, ax[2] * ax[1] * k + ax[0] * s, c + ax[2] * ax[2] * k),
-        )
-    return transform(mesh, rotation, p0)
-
-
-def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> Dict[str, Component]:
+def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> dict[str, Component]:
     """
     Build the full machine in world coordinates:
     +x toward discharge, +y left, +z up, ground plane at z=0.
@@ -342,7 +138,7 @@ def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> Dict[str, Componen
     axis_rotation = rot_y(90.0 + SPEC["tilt_preset_deg"])
     wall = 0.075  # 14 gauge
 
-    components: Dict[str, Component] = {}
+    components: dict[str, Component] = {}
 
     def add(component: Component):
         components[component.name] = component
@@ -393,9 +189,13 @@ def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> Dict[str, Componen
     nozzles = []
     for sy in (1, -1):
         n_hat = (0.0, sy * 0.643, 0.766)
-        base = tuple(manifold_center[i] + 2.8 * n_hat[i] for i in range(3))
-        tip = tuple(manifold_center[i] + 4.6 * n_hat[i] for i in range(3))
-        nozzles += _pipe_between(base, tip, radius=0.28, segments=12)
+        base = (manifold_center[0] + 2.8 * n_hat[0],
+                manifold_center[1] + 2.8 * n_hat[1],
+                manifold_center[2] + 2.8 * n_hat[2])
+        tip = (manifold_center[0] + 4.6 * n_hat[0],
+               manifold_center[1] + 4.6 * n_hat[1],
+               manifold_center[2] + 4.6 * n_hat[2])
+        nozzles += pipe_between(base, tip, radius=0.28, segments=12)
     add(Component(
         "spray_nozzles", nozzles, DENSITY["steel"], (0.78, 0.55, 0.25),
         explode_dir=(0.26, 0.0, 0.97),
@@ -436,13 +236,15 @@ def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> Dict[str, Componen
     rail_z, rail_y = 10.0, 10.0
     frame_members = []
     for sy in (1, -1):
-        frame_members += _pipe_between((-32.0, sy * rail_y, rail_z), (24.0, sy * rail_y, rail_z))
-        frame_members += _pipe_between((-31.5, sy * rail_y, rail_z), (-41.5, sy * rail_y, 16.5))
-        frame_members += _pipe_between((-28.0, sy * rail_y, rail_z + 0.45), (-28.0, sy * rail_y, 0.55))
-        frame_members += _pipe_between((6.5, sy * rail_y, rail_z + 0.45), (6.5, sy * 4.0, 19.5))
-        frame_members += _pipe_between((18.0, sy * rail_y, rail_z + 0.42), (7.0, sy * 4.4, 19.0))
-    frame_members += _pipe_between((-28.0, -rail_y - 0.48, rail_z), (-28.0, rail_y + 0.48, rail_z))
-    frame_members += _pipe_between((18.0, -rail_y - 0.48, rail_z), (18.0, rail_y + 0.48, rail_z))
+        frame_members += pipe_between((-32.0, sy * rail_y, rail_z), (24.0, sy * rail_y, rail_z))
+        frame_members += pipe_between((-31.5, sy * rail_y, rail_z), (-41.5, sy * rail_y, 16.5))
+        frame_members += pipe_between(
+            (-28.0, sy * rail_y, rail_z + 0.45), (-28.0, sy * rail_y, 0.55)
+        )
+        frame_members += pipe_between((6.5, sy * rail_y, rail_z + 0.45), (6.5, sy * 4.0, 19.5))
+        frame_members += pipe_between((18.0, sy * rail_y, rail_z + 0.42), (7.0, sy * 4.4, 19.0))
+    frame_members += pipe_between((-28.0, -rail_y - 0.48, rail_z), (-28.0, rail_y + 0.48, rail_z))
+    frame_members += pipe_between((18.0, -rail_y - 0.48, rail_z), (18.0, rail_y + 0.48, rail_z))
     add(Component(
         "frame", frame_members, DENSITY["pipe_effective"], (0.35, 0.38, 0.42),
     ))
@@ -450,7 +252,7 @@ def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> Dict[str, Componen
     # Handle grips
     grips = []
     for sy in (1, -1):
-        grips += _pipe_between((-38.3, sy * rail_y, 14.6), (-42.0, sy * rail_y, 16.8),
+        grips += pipe_between((-38.3, sy * rail_y, 14.6), (-42.0, sy * rail_y, 16.8),
                                radius=0.7, segments=16)
     add(Component("handle_grips", grips, DENSITY["rubber_wheel"],
                   (0.10, 0.10, 0.10)))
@@ -499,9 +301,9 @@ def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> Dict[str, Componen
 # ---------------------------------------------------------------------------
 
 def validate_assembly(
-    components: Dict[str, Component],
+    components: dict[str, Component],
     housing_id: float = SPEC["housing_id_in"],
-) -> Dict[str, object]:
+) -> dict[str, Any]:
     """
     Validate the modeled machine against docs/SPECIFICATIONS.md.
 
@@ -514,7 +316,7 @@ def validate_assembly(
         housing_id: bore used to build it (6.0 baseline or the 6.5
             self-consistent design point from DESIGN_INSIGHTS D11)
     """
-    report: Dict[str, object] = {"components": {}, "checks": []}
+    report: dict[str, Any] = {"components": {}, "checks": []}
 
     def check(name: str, ok: bool, detail: str):
         report["checks"].append(
@@ -562,12 +364,14 @@ def validate_assembly(
     (x0, y0, z0), (x1, y1, z1) = bounding_box(everything)
     length, width, height = x1 - x0, y1 - y0, z1 - z0
     report["envelope_in"] = (length, width, height)
-    check("envelope_length", abs(length - SPEC["overall_length_in"]) / SPEC["overall_length_in"] < 0.10,
-          f"{length:.1f}\" vs spec {SPEC['overall_length_in']}\"")
-    check("envelope_width", abs(width - SPEC["overall_width_in"]) / SPEC["overall_width_in"] < 0.10,
-          f"{width:.1f}\" vs spec {SPEC['overall_width_in']}\"")
-    check("envelope_height", abs(height - SPEC["overall_height_in"]) / SPEC["overall_height_in"] < 0.10,
-          f"{height:.1f}\" vs spec {SPEC['overall_height_in']}\"")
+    for axis_name, measured, spec_key in (
+        ("length", length, "overall_length_in"),
+        ("width", width, "overall_width_in"),
+        ("height", height, "overall_height_in"),
+    ):
+        check(f"envelope_{axis_name}",
+              abs(measured - SPEC[spec_key]) / SPEC[spec_key] < 0.10,
+              f"{measured:.1f}\" vs spec {SPEC[spec_key]}\"")
     check("ground_plane", abs(z0) < 1e-6, f"lowest point at z={z0:.3f}\"")
 
     # Only the running gear and support feet may touch the ground
@@ -608,7 +412,7 @@ def validate_assembly(
     )
 
     def radial_distance(v: Vec3) -> float:
-        w = _sub(v, origin)
+        w = sub(v, origin)
         t = w[0] * u[0] + w[1] * u[1] + w[2] * u[2]
         perp = (w[0] - t * u[0], w[1] - t * u[1], w[2] - t * u[2])
         return math.sqrt(perp[0] ** 2 + perp[1] ** 2 + perp[2] ** 2)
@@ -656,7 +460,7 @@ def validate_assembly(
     return report
 
 
-def print_report(report: Dict[str, object]):
+def print_report(report: dict[str, Any]) -> None:
     print("=" * 72)
     print("MUDMIXER FULL-MACHINE CAD VALIDATION")
     print("=" * 72)
@@ -694,10 +498,10 @@ def print_report(report: Dict[str, object]):
 # ---------------------------------------------------------------------------
 
 def render_assembly(
-    components: Dict[str, Component],
+    components: dict[str, Component],
     path: str,
     explode: float = 0.0,
-    views: Optional[List[Tuple[str, float, float]]] = None,
+    views: list[tuple[str, float, float]] | None = None,
 ) -> None:
     """Render the assembly (optionally exploded) to PNG. Needs matplotlib."""
     import matplotlib
@@ -705,17 +509,19 @@ def render_assembly(
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-    light = _normalize((0.4, -0.6, 0.7))
-    all_triangles: List[Triangle] = []
-    face_colors: List[Tuple[float, float, float]] = []
+    light = normalize((0.4, -0.6, 0.7))
+    all_triangles: list[Triangle] = []
+    face_colors: list[tuple[float, ...]] = []
 
     for component in components.values():
-        offset = tuple(explode * d for d in component.explode_dir)
+        offset = (explode * component.explode_dir[0],
+                  explode * component.explode_dir[1],
+                  explode * component.explode_dir[2])
         triangles = transform(component.triangles, None, offset)
         all_triangles += triangles
         for v0, v1, v2 in triangles:
-            normal = _normalize(_cross(_sub(v1, v0), _sub(v2, v0)))
-            intensity = abs(sum(n * l for n, l in zip(normal, light)))
+            normal = normalize(cross(sub(v1, v0), sub(v2, v0)))
+            intensity = abs(sum(n * lt for n, lt in zip(normal, light, strict=True)))
             scale = 0.40 + 0.60 * intensity
             face_colors.append(tuple(ch * scale for ch in component.color))
 
@@ -756,7 +562,7 @@ def render_assembly(
     plt.close(fig)
 
 
-def render_drawing_sheet(components: Dict[str, Component], path: str) -> None:
+def render_drawing_sheet(components: dict[str, Component], path: str) -> None:
     """
     Generate a dimensioned 2D engineering drawing sheet (side and front
     elevations with dimension callouts and a title block). Requires
@@ -849,11 +655,11 @@ def render_drawing_sheet(components: Dict[str, Component], path: str) -> None:
     plt.close(fig)
 
 
-def export_stls(components: Dict[str, Component], directory: str) -> List[str]:
+def export_stls(components: dict[str, Component], directory: str) -> list[str]:
     """Write one STL per component plus the combined assembly."""
     os.makedirs(directory, exist_ok=True)
     paths = []
-    combined: List[Triangle] = []
+    combined: list[Triangle] = []
     for component in components.values():
         path = os.path.join(directory, f"mudmixer_{component.name}.stl")
         write_binary_stl(component.triangles, path, f"MudMixer {component.name}")
@@ -865,7 +671,7 @@ def export_stls(components: Dict[str, Component], directory: str) -> List[str]:
     return paths
 
 
-def main(argv: Optional[List[str]] = None):
+def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(
         description="MudMixer full-machine CAD model: build, validate, export"
     )

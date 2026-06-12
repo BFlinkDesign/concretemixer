@@ -30,10 +30,9 @@ Dependencies: none for simulation (standard library); matplotlib for --plot
 import argparse
 import math
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
-from mixer_analysis import throughput_analysis, power_audit, WATER_QT_PER_BAG
 from auger_optimizer import AugerOptimizer
+from mixer_analysis import WATER_QT_PER_BAG, power_audit, throughput_analysis
 
 # Thermal model constants
 FINGER_FRICTION_SHARE = 0.05      # fraction of motor power heating fingers
@@ -72,15 +71,15 @@ class SimulationConfig:
 
 @dataclass
 class SimulationResult:
-    time_hr: List[float] = field(default_factory=list)
-    hopper_lb: List[float] = field(default_factory=list)
-    bags_cumulative: List[int] = field(default_factory=list)
-    amps: List[float] = field(default_factory=list)
-    kwh_cumulative: List[float] = field(default_factory=list)
-    temp_steel_f: List[float] = field(default_factory=list)
-    temp_uhmw_f: List[float] = field(default_factory=list)
-    temp_enclosure_f: List[float] = field(default_factory=list)
-    totals: Dict[str, float] = field(default_factory=dict)
+    time_hr: list[float] = field(default_factory=list)
+    hopper_lb: list[float] = field(default_factory=list)
+    bags_cumulative: list[int] = field(default_factory=list)
+    amps: list[float] = field(default_factory=list)
+    kwh_cumulative: list[float] = field(default_factory=list)
+    temp_steel_f: list[float] = field(default_factory=list)
+    temp_uhmw_f: list[float] = field(default_factory=list)
+    temp_enclosure_f: list[float] = field(default_factory=list)
+    totals: dict[str, float] = field(default_factory=dict)
 
 
 def _finger_thermal_params(material_cp: float, h: float):
@@ -90,7 +89,7 @@ def _finger_thermal_params(material_cp: float, h: float):
     return cooling, tau_hr
 
 
-def simulate(config: Optional[SimulationConfig] = None) -> SimulationResult:
+def simulate(config: SimulationConfig | None = None) -> SimulationResult:
     """Run the 12-hour duty-cycle simulation."""
     cfg = config or SimulationConfig()
     result = SimulationResult()
@@ -268,7 +267,7 @@ def plot(result: SimulationResult, path: str):
     plt.close(fig)
 
 
-def main(argv: Optional[List[str]] = None):
+def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(
         description="Simulate a 12-hour MudMixer jobsite day"
     )

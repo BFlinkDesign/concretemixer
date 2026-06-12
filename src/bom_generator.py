@@ -27,11 +27,11 @@ Dependencies: none (standard library only)
 import argparse
 import csv
 import math
-from typing import Dict, List, Optional
+from typing import Any
 
 from auger_optimizer import AugerOptimizer, PowerSystem
 from mixer_analysis import water_demand
-from mixer_cad import DENSITY, build_mixer
+from mixer_cad import build_mixer
 
 SCRAP_FACTOR = 1.15
 SHEET_THICKNESS = 0.075  # 14 ga
@@ -41,7 +41,7 @@ PIPE_RADIUS = 0.5
 WIRE_AMPACITY = {16: 13, 14: 17, 12: 23, 10: 33, 8: 46}
 
 
-def cad_derived_materials(housing_id: float = 6.0) -> List[Dict[str, object]]:
+def cad_derived_materials(housing_id: float = 6.0) -> list[dict[str, Any]]:
     """Raw-stock requirements computed from the CAD meshes."""
     components = build_mixer(housing_id=housing_id)
 
@@ -88,7 +88,7 @@ def cad_derived_materials(housing_id: float = 6.0) -> List[Dict[str, object]]:
     ]
 
 
-def purchased_parts(housing_id: float = 6.0) -> List[Dict[str, object]]:
+def purchased_parts(housing_id: float = 6.0) -> list[dict[str, Any]]:
     """Consolidated purchased-parts list with audit-corrected specs."""
     design = AugerOptimizer(housing_id).generate_optimized_design()
     auger_od = design["geometry"]["auger_od"]
@@ -149,7 +149,7 @@ def purchased_parts(housing_id: float = 6.0) -> List[Dict[str, object]]:
     return parts
 
 
-def procurement_audit(housing_id: float = 6.0) -> List[Dict[str, object]]:
+def procurement_audit(housing_id: float = 6.0) -> list[dict[str, Any]]:
     """Cross-check every spec the analysis framework can verify."""
     checks = []
     design = AugerOptimizer(housing_id).generate_optimized_design()
@@ -195,7 +195,7 @@ def procurement_audit(housing_id: float = 6.0) -> List[Dict[str, object]]:
     return checks
 
 
-def full_bom(housing_id: float = 6.0) -> List[Dict[str, object]]:
+def full_bom(housing_id: float = 6.0) -> list[dict[str, Any]]:
     materials = [dict(entry, category="raw stock")
                  for entry in cad_derived_materials(housing_id)]
     parts = [dict(entry, category="purchased")
@@ -203,9 +203,9 @@ def full_bom(housing_id: float = 6.0) -> List[Dict[str, object]]:
     return materials + parts
 
 
-def cost_rollup(bom: List[Dict[str, object]]) -> Dict[str, float]:
+def cost_rollup(bom: list[dict[str, Any]]) -> dict[str, float]:
     total = sum(entry["est_cost"] for entry in bom)
-    by_category: Dict[str, float] = {}
+    by_category: dict[str, float] = {}
     for entry in bom:
         by_category[entry["category"]] = (
             by_category.get(entry["category"], 0) + entry["est_cost"]
@@ -213,7 +213,7 @@ def cost_rollup(bom: List[Dict[str, object]]) -> Dict[str, float]:
     return {"total": total, **by_category}
 
 
-def write_csv(bom: List[Dict[str, object]], path: str):
+def write_csv(bom: list[dict[str, Any]], path: str):
     fields = ["category", "item", "qty", "spec", "source", "est_cost"]
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
@@ -260,7 +260,7 @@ def write_markdown(housing_id: float, path: str):
         f.write("\n".join(lines) + "\n")
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="CAD-reconciled BOM and procurement audit"
     )

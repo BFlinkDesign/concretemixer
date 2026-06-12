@@ -28,7 +28,6 @@ import contextlib
 import hashlib
 import io
 import os
-from typing import List, Optional
 
 import manufacturing_audit
 import mixer_analysis
@@ -52,7 +51,7 @@ def _capture(func, *args, **kwargs) -> str:
     return buffer.getvalue()
 
 
-def build(out_dir: str) -> List[str]:
+def build(out_dir: str) -> list[str]:
     """Generate all artifacts. Returns paths. Raises on validation failure."""
     stl_dir = os.path.join(out_dir, "stl")
     render_dir = os.path.join(out_dir, "renders")
@@ -60,7 +59,7 @@ def build(out_dir: str) -> List[str]:
     for directory in (stl_dir, render_dir, report_dir):
         os.makedirs(directory, exist_ok=True)
 
-    artifacts: List[str] = []
+    artifacts: list[str] = []
 
     def save_report(name: str, content: str) -> str:
         path = os.path.join(report_dir, name)
@@ -169,7 +168,7 @@ def build(out_dir: str) -> List[str]:
     return artifacts
 
 
-def main(argv: Optional[List[str]] = None):
+def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(
         description="Regenerate every MudMixer artifact and audit it"
     )

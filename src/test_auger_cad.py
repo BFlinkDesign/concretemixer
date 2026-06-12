@@ -8,11 +8,11 @@ from collections import Counter
 import pytest
 
 from auger_cad import (
+    _sweep_rings,
     build_auger_mesh,
     build_flight_mesh,
     mesh_volume,
     write_binary_stl,
-    _sweep_rings,
 )
 from auger_optimizer import AugerGeometry, AugerOptimizer, FingerConfig, FingerMaterial
 
@@ -40,7 +40,7 @@ def assert_watertight(triangles):
     This guarantees the mesh is closed (no holes), manifold, and
     consistently oriented — the requirements for a printable STL.
     """
-    edges = Counter()
+    edges: Counter[tuple] = Counter()
     for v0, v1, v2 in triangles:
         edges[(v0, v1)] += 1
         edges[(v1, v2)] += 1

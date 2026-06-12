@@ -37,10 +37,13 @@ class TestQuantitiesFromCAD:
     def test_auger_stock_scales_with_bore(self):
         small = bom_generator.cad_derived_materials(6.0)
         large = bom_generator.cad_derived_materials(6.5)
-        weight = lambda mats: float(
-            next(m for m in mats if "flight" in m["item"])["qty"].split()[0]
-        )
-        assert weight(large) > weight(small)
+
+        def flight_weight(mats):
+            return float(
+                next(m for m in mats if "flight" in m["item"])["qty"].split()[0]
+            )
+
+        assert flight_weight(large) > flight_weight(small)
 
 
 class TestOutputs:

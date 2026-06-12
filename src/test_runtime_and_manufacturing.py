@@ -8,7 +8,6 @@ Three guarantees:
    envelope (ambient temperature, shift length, integration step)
 """
 
-import os
 
 import pytest
 
@@ -105,20 +104,20 @@ class TestManufacturingAudit:
             manufacturing_audit.read_binary_stl(str(path))
 
     def test_detects_open_shell(self):
-        from mixer_cad import box
+        from geometry import box
         mesh = box(1, 1, 1)[:-1]  # remove one facet → hole
         result = manufacturing_audit.audit_triangles(mesh, "open")
         assert not result["ok"]
         assert any("watertight" in f for f in result["failures"])
 
     def test_detects_inverted_shell(self):
-        from mixer_cad import box, flip
+        from geometry import box, flip
         result = manufacturing_audit.audit_triangles(flip(box(1, 1, 1)), "inv")
         assert not result["ok"]
         assert any("inverted" in f for f in result["failures"])
 
     def test_detects_degenerate_facets(self):
-        from mixer_cad import box
+        from geometry import box
         point = (0.0, 0.0, 0.0)
         mesh = box(1, 1, 1) + [(point, point, point)]
         result = manufacturing_audit.audit_triangles(mesh, "degen")

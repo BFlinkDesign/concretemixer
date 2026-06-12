@@ -12,8 +12,10 @@ matplotlib>=3.4.0
 numpy>=1.21.0          # Numerical computations
 scipy>=1.7.0           # Optimization algorithms
 
-# Development - test suite
+# Development - test suite and quality gates
 pytest>=7.0.0
+ruff>=0.5.0            # Lint (config in pyproject.toml)
+mypy>=1.10.0           # Type check (config in pyproject.toml)
 
 # Optional - for CFD preprocessing
 # meshio>=5.0.0         # Mesh format conversion

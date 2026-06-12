@@ -23,103 +23,32 @@ Dependencies: none (standard library only)
 
 import math
 import os
-import struct
 import sys
-from collections import Counter
-from typing import Dict, List, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
-Vec3 = Tuple[float, float, float]
-Triangle = Tuple[Vec3, Vec3, Vec3]
+from geometry import (
+    Triangle,
+    facet_area,
+    is_watertight,
+    mesh_volume,
+    read_binary_stl,
+    split_shells,
+)
+
+__all__ = [
+    "audit_file",
+    "audit_paths",
+    "audit_triangles",
+    "read_binary_stl",
+]
 
 MIN_FACET_AREA_IN2 = 1e-9
 
 
-def read_binary_stl(path: str) -> List[Triangle]:
-    """Parse a binary STL file, validating its declared structure."""
-    size = os.path.getsize(path)
-    with open(path, "rb") as f:
-        f.read(80)
-        (count,) = struct.unpack("<I", f.read(4))
-        expected_size = 84 + 50 * count
-        if size != expected_size:
-            raise ValueError(
-                f"{path}: file is {size} bytes, header declares {count} "
-                f"triangles ({expected_size} bytes)"
-            )
-        triangles = []
-        for _ in range(count):
-            values = struct.unpack("<12fH", f.read(50))
-            triangles.append((
-                (values[3], values[4], values[5]),
-                (values[6], values[7], values[8]),
-                (values[9], values[10], values[11]),
-            ))
-    return triangles
-
-
-def _facet_area(tri: Triangle) -> float:
-    (ax, ay, az), (bx, by, bz), (cx, cy, cz) = tri
-    ux, uy, uz = bx - ax, by - ay, bz - az
-    vx, vy, vz = cx - ax, cy - ay, cz - az
-    nx = uy * vz - uz * vy
-    ny = uz * vx - ux * vz
-    nz = ux * vy - uy * vx
-    return 0.5 * math.sqrt(nx * nx + ny * ny + nz * nz)
-
-
-def split_shells(triangles: Sequence[Triangle]) -> List[List[Triangle]]:
-    """Group triangles into vertex-connected shells (union-find)."""
-    parent = list(range(len(triangles)))
-
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    def union(i: int, j: int):
-        ri, rj = find(i), find(j)
-        if ri != rj:
-            parent[rj] = ri
-
-    seen: Dict[Vec3, int] = {}
-    for index, tri in enumerate(triangles):
-        for vertex in tri:
-            if vertex in seen:
-                union(seen[vertex], index)
-            else:
-                seen[vertex] = index
-
-    shells: Dict[int, List[Triangle]] = {}
-    for index, tri in enumerate(triangles):
-        shells.setdefault(find(index), []).append(tri)
-    return list(shells.values())
-
-
-def _is_watertight(triangles: Sequence[Triangle]) -> bool:
-    edges = Counter()
-    for v0, v1, v2 in triangles:
-        edges[(v0, v1)] += 1
-        edges[(v1, v2)] += 1
-        edges[(v2, v0)] += 1
-    return all(
-        count == 1 and edges[(b, a)] == 1 for (a, b), count in edges.items()
-    )
-
-
-def _signed_volume(triangles: Sequence[Triangle]) -> float:
-    total = 0.0
-    for v0, v1, v2 in triangles:
-        cx = v1[1] * v2[2] - v1[2] * v2[1]
-        cy = v1[2] * v2[0] - v1[0] * v2[2]
-        cz = v1[0] * v2[1] - v1[1] * v2[0]
-        total += (v0[0] * cx + v0[1] * cy + v0[2] * cz) / 6.0
-    return total
-
-
-def audit_triangles(triangles: Sequence[Triangle], name: str) -> Dict[str, object]:
+def audit_triangles(triangles: Sequence[Triangle], name: str) -> dict[str, Any]:
     """Run all manufacturability checks on a parsed mesh."""
-    failures: List[str] = []
+    failures: list[str] = []
 
     if not triangles:
         failures.append("empty mesh")
@@ -137,7 +66,7 @@ def audit_triangles(triangles: Sequence[Triangle], name: str) -> Dict[str, objec
             continue
         break
 
-    degenerate = sum(1 for t in triangles if _facet_area(t) < MIN_FACET_AREA_IN2)
+    degenerate = sum(1 for t in triangles if facet_area(t) < MIN_FACET_AREA_IN2)
     if degenerate:
         failures.append(f"{degenerate} degenerate facets")
 
@@ -146,9 +75,9 @@ def audit_triangles(triangles: Sequence[Triangle], name: str) -> Dict[str, objec
     inverted_shells = 0
     total_volume = 0.0
     for shell in shells:
-        if not _is_watertight(shell):
+        if not is_watertight(shell):
             open_shells += 1
-        volume = _signed_volume(shell)
+        volume = mesh_volume(shell)
         total_volume += volume
         if volume <= 0:
             inverted_shells += 1
@@ -167,14 +96,14 @@ def audit_triangles(triangles: Sequence[Triangle], name: str) -> Dict[str, objec
     }
 
 
-def audit_file(path: str) -> Dict[str, object]:
+def audit_file(path: str) -> dict[str, Any]:
     """Parse an STL from disk and audit it."""
     return audit_triangles(read_binary_stl(path), os.path.basename(path))
 
 
-def audit_paths(paths: Sequence[str]) -> List[Dict[str, object]]:
+def audit_paths(paths: Sequence[str]) -> list[dict[str, Any]]:
     """Audit STL files and/or directories of STL files."""
-    files: List[str] = []
+    files: list[str] = []
     for path in paths:
         if os.path.isdir(path):
             files += sorted(

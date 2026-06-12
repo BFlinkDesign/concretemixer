@@ -16,9 +16,9 @@ Dependencies:
 
 import argparse
 import math
-from dataclasses import dataclass, field
-from typing import Any, Optional, Tuple, List, Dict
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class FingerMaterial(Enum):
@@ -97,7 +97,7 @@ class AugerGeometry:
     def pd_ratio_chute(self) -> float:
         return self.pitch_chute / self.outer_diameter
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Validate geometry against patent specifications."""
         issues = []
 
@@ -164,7 +164,7 @@ class AugerOptimizer:
     def __init__(
         self,
         housing_id: float,
-        conditions: Optional[OperatingConditions] = None
+        conditions: OperatingConditions | None = None
     ):
         """
         Initialize optimizer with housing internal diameter.
@@ -177,7 +177,7 @@ class AugerOptimizer:
         self.conditions = conditions or OperatingConditions()
         self.safety_factor = 2.5
 
-    def calculate_clearance(self, auger_od: float) -> Dict[str, float]:
+    def calculate_clearance(self, auger_od: float) -> dict[str, Any]:
         """
         Calculate clearance between auger and housing.
 
@@ -216,7 +216,7 @@ class AugerOptimizer:
 
         return result
 
-    def calculate_finger_shear(self, fingers: FingerConfig) -> Dict[str, Any]:
+    def calculate_finger_shear(self, fingers: FingerConfig) -> dict[str, Any]:
         """
         Determine if fingers can shear aggregate based on torque and geometry.
 
@@ -252,7 +252,7 @@ class AugerOptimizer:
         material_strength = fingers.material.shear_strength_psi
         design_strength = material_strength / self.safety_factor
 
-        result = {
+        result: dict[str, Any] = {
             "force_per_finger_lbf": force_per_finger_lbf,
             "jam_force_lbf": jam_force_lbf,
             "contact_area_sq_in": contact_area,
@@ -283,7 +283,7 @@ class AugerOptimizer:
 
         return result
 
-    def calculate_skeleton_diameter(self) -> Dict[str, float]:
+    def calculate_skeleton_diameter(self) -> dict[str, Any]:
         """
         Calculate minimum stainless steel skeleton wire diameter for torsion.
 
@@ -308,7 +308,9 @@ class AugerOptimizer:
 
         # Round up to standard wire sizes
         standard_sizes = [0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0]
-        recommended_size = next((s for s in standard_sizes if s >= min_diameter), standard_sizes[-1])
+        recommended_size = next(
+            (s for s in standard_sizes if s >= min_diameter), standard_sizes[-1]
+        )
 
         return {
             "torque_in_lb": torque_in_lb,
@@ -323,7 +325,7 @@ class AugerOptimizer:
         self,
         fingers: FingerConfig,
         runtime_minutes: float = 60
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Estimate temperature rise in fingers due to friction.
 
@@ -337,10 +339,6 @@ class AugerOptimizer:
         # Friction power = coefficient × normal force × velocity
         # This is a simplified model
 
-        friction_coeff = 0.3  # Concrete on UHMW estimate
-        avg_radius = self.housing_id / 2 * 0.7
-        velocity = 2 * math.pi * (avg_radius / 12) * self.conditions.motor_rpm / 60  # ft/s
-
         # Assume 10% of motor power goes to finger friction
         friction_power_watts = self.conditions.motor_power_hp * 746 * 0.10
         friction_power_btu_hr = friction_power_watts * 3.412
@@ -353,10 +351,12 @@ class AugerOptimizer:
             fingers.material.density_lb_in3 * fingers.count
         )
 
-        temp_rise = (friction_power_btu_hr * runtime_minutes / 60) / (finger_weight_lb * heat_capacity)
+        temp_rise = (
+            friction_power_btu_hr * runtime_minutes / 60
+        ) / (finger_weight_lb * heat_capacity)
         final_temp = self.conditions.ambient_temp_f + temp_rise
 
-        result = {
+        result: dict[str, Any] = {
             "friction_power_watts": friction_power_watts,
             "runtime_minutes": runtime_minutes,
             "estimated_temp_rise_f": temp_rise,
@@ -380,7 +380,7 @@ class AugerOptimizer:
     def generate_optimized_design(
         self,
         target_throughput_bags_hr: float = 45
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate an optimized auger design based on constraints.
 
@@ -498,7 +498,7 @@ class PowerSystem:
         """Current at 24V DC bus (amps)."""
         return self.total_power_draw / self.system_voltage
 
-    def calculate_ac_specs(self) -> Dict[str, float]:
+    def calculate_ac_specs(self) -> dict[str, float]:
         """Calculate AC power requirements."""
         return {
             "input_voltage": 120,
@@ -514,7 +514,7 @@ class PowerSystem:
         battery_model: str = "DCB612",
         count: int = 1,
         series: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calculate runtime for DeWalt FlexVolt battery configuration.
 
@@ -564,7 +564,7 @@ class PowerSystem:
             "recommended_dc_dc": f"{voltage}V to 24V @ {self.current_draw_24v:.0f}A",
         }
 
-    def generate_power_system_bom(self) -> List[Dict[str, Any]]:
+    def generate_power_system_bom(self) -> list[dict[str, Any]]:
         """Generate bill of materials for dual power system."""
         ac_specs = self.calculate_ac_specs()
 
@@ -684,7 +684,7 @@ class ThermalAnalyzer:
         surface_area_in2: float,
         runtime_hours: float,
         convection_coeff: float = 2.0,  # BTU/(hr·ft²·°F), natural convection
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calculate steady-state temperature for continuous operation.
 
@@ -744,7 +744,7 @@ class ThermalAnalyzer:
         duty_cycle: DutyCycle,
         finger_mass_lb: float = 0.5,
         finger_surface_in2: float = 10.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Recommend finger material based on duty cycle thermal requirements.
         """
@@ -848,7 +848,7 @@ class CFDParameters:
         base_viscosity = 30  # Pa·s at w/c = 0.5
         return base_viscosity * (0.5 / self.wc_ratio) ** 1.5
 
-    def generate_cfd_setup(self) -> Dict[str, Any]:
+    def generate_cfd_setup(self) -> dict[str, Any]:
         """Generate CFD simulation parameters."""
         return {
             "material_model": "Bingham Plastic",
@@ -886,7 +886,7 @@ class CFDParameters:
         }
 
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments for the design framework."""
     parser = argparse.ArgumentParser(
         description="MudMixer shaftless auger generative design framework",
@@ -911,7 +911,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[List[str]] = None):
+def main(argv: list[str] | None = None):
     """Run the full design study from command-line arguments."""
     args = parse_args(argv)
 
@@ -936,9 +936,11 @@ def main(argv: Optional[List[str]] = None):
 
     print(f"Housing Internal Diameter: {housing_id}\" (ASSUMED)")
     print(f"Motor: {conditions.motor_power_hp} HP @ {conditions.motor_rpm} RPM")
-    print(f"Torque: {conditions.motor_torque_ft_lb:.1f} ft-lb ({conditions.motor_torque_nm:.1f} N·m)")
+    print(f"Torque: {conditions.motor_torque_ft_lb:.1f} ft-lb "
+          f"({conditions.motor_torque_nm:.1f} N·m)")
     print(f"Max Aggregate: {conditions.max_aggregate_size}\" (CONFIRMED)")
-    print(f"Duty Cycle: {conditions.duty_cycle.label} ({conditions.duty_cycle.runtime_hours} hours)")
+    print(f"Duty Cycle: {conditions.duty_cycle.label} "
+          f"({conditions.duty_cycle.runtime_hours} hours)")
     print(f"Thermal Severity: {conditions.duty_cycle.thermal_severity}")
     print()
 
@@ -1013,7 +1015,7 @@ def main(argv: Optional[List[str]] = None):
     print(f"    Input current: {ac_specs['input_current']:.1f} A")
     print(f"    Power draw: {ac_specs['power_watts']:.0f} W")
     print(f"    PSU rating: {ac_specs['psu_rating_watts']:.0f} W (with headroom)")
-    print(f"    Runtime: UNLIMITED (continuous)")
+    print("    Runtime: UNLIMITED (continuous)")
 
     # Battery configurations
     print()
@@ -1024,7 +1026,8 @@ def main(argv: Optional[List[str]] = None):
         # Single battery
         single = power.calculate_battery_runtime(battery, count=1)
         print(f"    {single['configuration']}:")
-        print(f"      Runtime: {single['runtime_minutes']:.0f} min ({single['runtime_hours']:.2f} hr)")
+        print(f"      Runtime: {single['runtime_minutes']:.0f} min "
+              f"({single['runtime_hours']:.2f} hr)")
         print(f"      Bags: ~{single['bags_estimate']}")
 
     print()

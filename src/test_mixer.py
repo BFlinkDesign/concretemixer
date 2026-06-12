@@ -6,22 +6,19 @@ import os
 import pytest
 
 import mixer_analysis
-from mixer_cad import (
-    SPEC,
-    box,
+from geometry import (
     bounding_box,
-    build_mixer,
+    box,
     cylinder,
-    export_stls,
     flip,
     is_watertight,
     mesh_centroid,
+    mesh_volume,
     rect_funnel,
     transform,
     tube,
-    validate_assembly,
 )
-from auger_cad import mesh_volume
+from mixer_cad import SPEC, build_mixer, export_stls, validate_assembly
 
 
 class TestPrimitives:
