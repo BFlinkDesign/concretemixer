@@ -146,6 +146,25 @@ under an hour of continuous mixing), losing mixing effectiveness long
 before visible failure. The enclosure numbers convert the README's
 "active cooling required" from a judgment into a computed requirement.
 
+### D13. The repo's own structural analysis used wrong load paths (now corrected)
+
+[ENGINEERING.md](./ENGINEERING.md) originally modeled the axle with 100%
+of machine weight on a 6" moment arm (61,875 psi — "needs 3/4" hardened
+axle") and the frame as a single tube under a 500 lb point load
+(44,117 psi > 36,000 psi yield, yet labeled "adequate"). Both load paths
+were wrong:
+
+- The CAD mass model shows wheels carry **~59%** of weight when parked,
+  and the true bending arm is the **~2"** bracket-to-wheel offset.
+  Corrected axle stress: **16,700 psi → SF 2.2–3.2** — the production
+  machine's 5/8" axle is fine, which is presumably why MudMixer ships one.
+- The frame load is shared by two rails and distributed: **10,900 psi →
+  SF 3.3** (or 5,600 psi with true schedule-40 pipe).
+
+The CAD-derived load fractions turned a self-contradictory hand
+calculation into a consistent one. (`mixer_cad.validate_assembly`,
+corrected derivations in ENGINEERING.md §3)
+
 ---
 
 ## Part 2 — Rich Enhancement Opportunities

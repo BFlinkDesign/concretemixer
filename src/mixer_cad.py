@@ -498,13 +498,21 @@ def build_mixer(housing_id: float = SPEC["housing_id_in"]) -> Dict[str, Componen
 # Validation
 # ---------------------------------------------------------------------------
 
-def validate_assembly(components: Dict[str, Component]) -> Dict[str, object]:
+def validate_assembly(
+    components: Dict[str, Component],
+    housing_id: float = SPEC["housing_id_in"],
+) -> Dict[str, object]:
     """
     Validate the modeled machine against docs/SPECIFICATIONS.md.
 
     Checks: per-component mesh integrity, mass budget vs 145 lb dry weight,
     overall envelope, discharge height, hopper lift height, auger clearance,
     center of gravity, axle/leg load split, and handle lift effort.
+
+    Args:
+        components: assembly from build_mixer()
+        housing_id: bore used to build it (6.0 baseline or the 6.5
+            self-consistent design point from DESIGN_INSIGHTS D11)
     """
     report: Dict[str, object] = {"components": {}, "checks": []}
 
@@ -609,7 +617,7 @@ def validate_assembly(components: Dict[str, Component]) -> Dict[str, object]:
         radial_distance(v)
         for tri in components["auger"].triangles for v in tri
     )
-    bore_radius = SPEC["housing_id_in"] / 2
+    bore_radius = housing_id / 2
     measured_clearance = bore_radius - max_auger_radius
     min_clearance = 0.5 * 1.2  # 0.5" aggregate + 20%
     report["measured_bore_clearance_in"] = measured_clearance
@@ -861,6 +869,11 @@ def main(argv: Optional[List[str]] = None):
     parser = argparse.ArgumentParser(
         description="MudMixer full-machine CAD model: build, validate, export"
     )
+    parser.add_argument("--housing-id", type=float,
+                        default=SPEC["housing_id_in"],
+                        help="Chute housing bore, inches (6.0 baseline; "
+                             "6.5 = self-consistent design point, see "
+                             "DESIGN_INSIGHTS D11)")
     parser.add_argument("--report", action="store_true",
                         help="Print the validation report")
     parser.add_argument("--stl-dir", metavar="DIR",
@@ -873,8 +886,8 @@ def main(argv: Optional[List[str]] = None):
                         help="Render dimensioned drawing sheet to PNG")
     args = parser.parse_args(argv)
 
-    components = build_mixer()
-    report = validate_assembly(components)
+    components = build_mixer(args.housing_id)
+    report = validate_assembly(components, args.housing_id)
 
     if args.report or not (args.stl_dir or args.render or args.exploded):
         print_report(report)

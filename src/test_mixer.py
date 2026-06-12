@@ -106,6 +106,15 @@ class TestAssembly:
     def test_lateral_symmetry(self, report):
         assert report["cg_empty"][1] == pytest.approx(0.0, abs=0.5)
 
+    def test_converged_design_point_also_validates(self):
+        """The machine must validate at BOTH the 6.0\" baseline and the
+        6.5\" self-consistent design point (DESIGN_INSIGHTS D11)."""
+        components = build_mixer(housing_id=6.5)
+        report = validate_assembly(components, housing_id=6.5)
+        failures = [c for c in report["checks"] if c["status"] != "OK"]
+        assert failures == [], f"failed at 6.5\" bore: {failures}"
+        assert report["measured_bore_clearance_in"] >= 0.6
+
     def test_stl_export(self, components, tmp_path):
         paths = export_stls(components, str(tmp_path))
         # One STL per component plus the combined assembly
