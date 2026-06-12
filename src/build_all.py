@@ -109,6 +109,20 @@ def build(out_dir: str) -> List[str]:
     artifacts.append(save_report(
         "cross_spec_analysis.txt", _capture(mixer_analysis.main)
     ))
+
+    # --- Procurement package (both design points, audit-gated) --------------
+    import bom_generator
+    for bore, tag in ((6.0, "baseline_6.0in"), (6.5, "converged_6.5in")):
+        csv_path = os.path.join(report_dir, f"bom_{tag}.csv")
+        md_path = os.path.join(report_dir, f"procurement_{tag}.md")
+        bom_generator.write_csv(bom_generator.full_bom(bore), csv_path)
+        bom_generator.write_markdown(bore, md_path)
+        artifacts += [csv_path, md_path]
+        failures = [c for c in bom_generator.procurement_audit(bore)
+                    if c["status"] != "OK"]
+        if failures:
+            raise RuntimeError(f"Procurement audit failed at {bore}\": {failures}")
+
     artifacts.append(save_report(
         "simulation_12hr.txt", _capture(mixer_simulation.main, [])
     ))

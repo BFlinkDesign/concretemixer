@@ -69,6 +69,9 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - [mixer_cad.py](./src/mixer_cad.py) - **Full-machine parametric CAD** with validated mass, CG, stability, clearances + dimensioned drawing sheet
 - [mixer_analysis.py](./src/mixer_analysis.py) - Cross-specification physics analysis + self-consistent design point
 - [mixer_simulation.py](./src/mixer_simulation.py) - **12-hour duty-cycle digital twin** (feed, thermal, electrical)
+- [bom_generator.py](./src/bom_generator.py) - **CAD-reconciled BOM + procurement audit** (caught 3 errors in the hand-written BOM, see D14)
+- [manufacturing_audit.py](./src/manufacturing_audit.py) - File-level STL verification gate
+- [build_all.py](./src/build_all.py) - One-command regeneration of every artifact
 - [requirements.txt](./src/requirements.txt) - Python dependencies (core is stdlib-only)
 
 ```bash

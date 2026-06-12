@@ -1,5 +1,25 @@
 # Bill of Materials (BOM)
 
+> ⚠️ **SUPERSEDED FOR PROCUREMENT** — this hand-written BOM contains
+> errors caught by the procurement audit
+> ([DESIGN_INSIGHTS.md](./DESIGN_INSIGHTS.md) D14):
+>
+> 1. **Items 3.1 + 4.1 jam together**: a 5.5" auger in the 6" ID chute
+>    leaves 0.25"/side — below the 0.60" required for 0.5" aggregate.
+>    Correct pairs: 4.5" OD @ 6.0" bore, or 5.0" OD @ 6.5" bore.
+> 2. **Item 5.11's 15 A fuse blows at full load**: the 24 V DC bus draws
+>    ~18 A at 0.5 HP. Use 25 A, with 10 AWG DC-side wiring (item 5.8's
+>    14 AWG is adequate for the 120 V AC side only).
+> 3. **Item 6.6's 1/8" nozzle orifice flows ~7×** the required
+>    0.33 GPM/nozzle; use ~3/64" orifices plus an inline filter.
+> 4. The $360–650 estimate underbudgets the sealed 67:1 gearmotor;
+>    realistic total is **~$1,050**.
+>
+> **Procure from the generated package instead** — built from the
+> validated CAD model and audit-gated in CI:
+> `python src/bom_generator.py --housing-id 6.5 --csv bom.csv --md bom.md`
+> (also produced automatically in `dist/reports/` by `src/build_all.py`).
+
 ## Overview
 
 This document provides a comprehensive list of components needed to replicate a MudMixer-style continuous concrete mixer. All specifications are derived from reverse engineering and may need adjustment based on available materials.

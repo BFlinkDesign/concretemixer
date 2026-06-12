@@ -165,6 +165,23 @@ The CAD-derived load fractions turned a self-contradictory hand
 calculation into a consistent one. (`mixer_cad.validate_assembly`,
 corrected derivations in ENGINEERING.md §3)
 
+### D14. The original BOM specifies a machine that jams, blows its fuse, and over-waters
+
+Running the procurement audit (`bom_generator.procurement_audit`) against
+the hand-written [BOM.md](./BOM.md) found three buy-list errors:
+
+| BOM item | As written | Problem | Corrected |
+|---|---|---|---|
+| 3.1 + 4.1 | 5.5" auger in 6" ID chute | 0.25"/side — jams on the confirmed 0.5" aggregate (needs 0.60") | 4.5" @ 6.0" bore / 5.0" @ 6.5" bore |
+| 5.11 | 15 A fuse | 24 V DC bus draws ~18 A at 0.5 HP — blows at full load | 25 A fuse, 10 AWG DC wiring |
+| 6.6 | 1/8" nozzle orifice | ~7× the required 0.33 GPM/nozzle at 30 PSI | ~3/64" orifice + inline filter |
+
+The $360–650 cost estimate also underbudgets the sealed ~67:1 gearmotor;
+the reconciled total is ~$1,050. Procurement now comes from
+`src/bom_generator.py`, which derives raw-stock quantities (24 ft² of
+14 ga sheet, 23.5 ft of 1" pipe, flight/skeleton/axle bar stock) from
+the CAD mesh volumes and audit-gates the parts list in CI.
+
 ---
 
 ## Part 2 — Rich Enhancement Opportunities
