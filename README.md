@@ -51,12 +51,15 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - [Auger 3D Render](./drawings/AUGER_RENDER.png) - Generated from `src/auger_cad.py`
 - [Full Machine Render](./drawings/MIXER_ASSEMBLY_RENDER.png) - Four-view assembly sheet
 - [Exploded View](./drawings/MIXER_EXPLODED_RENDER.png) - Component breakdown
+- [General Arrangement Drawing](./drawings/MIXER_DRAWING_SHEET.png) - Dimensioned elevations
+- [12-Hour Simulation](./drawings/SIMULATION_12HR.png) - Operational digital twin timeline
 
 ### Computational Tools (`src/`)
 - [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework (CLI)
 - [auger_cad.py](./src/auger_cad.py) - Auger mesh generation, STL export, rendering
-- [mixer_cad.py](./src/mixer_cad.py) - **Full-machine parametric CAD** with validated mass, CG, stability, clearances
-- [mixer_analysis.py](./src/mixer_analysis.py) - Cross-specification physics analysis
+- [mixer_cad.py](./src/mixer_cad.py) - **Full-machine parametric CAD** with validated mass, CG, stability, clearances + dimensioned drawing sheet
+- [mixer_analysis.py](./src/mixer_analysis.py) - Cross-specification physics analysis + self-consistent design point
+- [mixer_simulation.py](./src/mixer_simulation.py) - **12-hour duty-cycle digital twin** (feed, thermal, electrical)
 - [requirements.txt](./src/requirements.txt) - Python dependencies (core is stdlib-only)
 
 ```bash
@@ -71,6 +74,12 @@ python src/mixer_cad.py --report --stl-dir cad_out --render assembly.png --explo
 
 # Cross-specification discovery analysis (implied bore size, power audit...):
 python src/mixer_analysis.py
+
+# Simulate a full 12-hour jobsite day (bags, water, energy, temperatures):
+python src/mixer_simulation.py --plot simulation.png
+
+# Generate the dimensioned general-arrangement drawing:
+python src/mixer_cad.py --drawing drawing_sheet.png
 
 # Run the test suite (requires pytest):
 python -m pytest src/

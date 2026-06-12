@@ -113,6 +113,39 @@ dumping and the guard. The optional 300 lb extension therefore roughly
 *triples* cavity volume, consistent with the published extension photos.
 (`mixer_analysis.hopper_capacity_check`)
 
+### D11. The design is self-consistent only at the 6.5" bore
+
+Closing the D1 loop with fixed-point iteration (bore → optimized
+geometry → predicted throughput → implied bore) converges in 2
+iterations to **bore 6.48", auger OD 4.98", pitches 3.23"/4.23"** — a
+design point that reproduces the claimed 45.0 bags/hr exactly at CEMA
+mid-range fill efficiency while satisfying every patent P/D constraint.
+The published performance and the patent geometry agree with each other
+*only* at this size. (`mixer_analysis.converged_design`)
+
+### D12. A simulated 12-hour day independently reproduces the duty-cycle spec
+
+The time-domain simulation (`mixer_simulation.py`) of a full jobsite day
+at the converged design point — operator feed loop, lunch break, thermal
+lags, honest electrical draw — yields:
+
+| Quantity | Simulated | Cross-reference |
+|---|---|---|
+| Bags mixed | **524** | `DutyCycle.JOBSITE_12HR` defined 500/session (+4.8%) |
+| Concrete placed | 11.6 yd³ | ~1 yd³/hr claim ✓ |
+| Water | 458 gal | D7 rate × runtime ✓ |
+| Energy | 5.7 kWh | ~$1 of electricity per 12 yd³ day |
+| Steel fingers | peak 156°F | 644°F margin |
+| UHMW fingers | peak 156°F | **exceeds 116°F heat-deflection within the first hour** |
+| Enclosure (no fan) | 147°F | above the 140°F electronics derating threshold |
+| Enclosure (with fan) | 112°F | confirms "active cooling required" |
+
+The UHMW result sharpens the material conclusion: UHMW fingers don't
+melt in service — they *soften and deform* (deflection limit crossed in
+under an hour of continuous mixing), losing mixing effectiveness long
+before visible failure. The enclosure numbers convert the README's
+"active cooling required" from a judgment into a computed requirement.
+
 ---
 
 ## Part 2 — Rich Enhancement Opportunities
@@ -182,3 +215,5 @@ would let D1's bore estimate be confirmed across production units.
 | D7 | `mixer_analysis.water_demand` | `test_mixer.py::TestWaterAndPower` |
 | D8, D9 | `mixer_cad.validate_assembly` | `test_mixer.py::TestAssembly` |
 | D10 | `mixer_analysis.hopper_capacity_check` | `test_mixer.py::TestHopperCapacity` |
+| D11 | `mixer_analysis.converged_design` | `test_mixer_simulation.py::TestConvergedDesign` |
+| D12 | `mixer_simulation.simulate` | `test_mixer_simulation.py` (mass/energy/thermal) |

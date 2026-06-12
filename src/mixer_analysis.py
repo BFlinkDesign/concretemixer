@@ -105,6 +105,57 @@ def implied_auger_size(
     }
 
 
+def converged_design(
+    claimed_bags_hr: float = 45.0,
+    tolerance: float = 0.01,
+    max_iterations: int = 10,
+) -> Dict[str, object]:
+    """
+    Close the D1 discovery loop: iterate the housing bore until the
+    generative design's own geometry reproduces the manufacturer's
+    throughput claim at CEMA mid-range fill efficiency.
+
+    Fixed-point iteration: bore → optimized auger OD/pitch → predicted
+    throughput → implied bore correction → repeat until self-consistent.
+    """
+    housing_id = 6.0
+    history = []
+    for _ in range(max_iterations):
+        design = AugerOptimizer(housing_id).generate_optimized_design()
+        geometry = design["objects"]["geometry"]
+        flow = throughput_analysis(geometry=geometry)
+        history.append((housing_id, flow["throughput_bags_hr"]))
+
+        implied = implied_auger_size(
+            claimed_bags_hr=claimed_bags_hr,
+            pd_ratio_chute=geometry.pd_ratio_chute,
+        )
+        next_id = implied["implied_housing_id_in"]
+        if abs(next_id - housing_id) < tolerance:
+            housing_id = next_id
+            break
+        housing_id = next_id
+
+    design = AugerOptimizer(housing_id).generate_optimized_design()
+    geometry = design["objects"]["geometry"]
+    flow = throughput_analysis(geometry=geometry)
+
+    return {
+        "converged_housing_id_in": housing_id,
+        "auger_od_in": geometry.outer_diameter,
+        "pitch_hopper_in": geometry.pitch_hopper,
+        "pitch_chute_in": geometry.pitch_chute,
+        "predicted_bags_hr": flow["throughput_bags_hr"],
+        "claimed_bags_hr": claimed_bags_hr,
+        "iterations": len(history),
+        "history": history,
+        "self_consistent": abs(
+            flow["throughput_bags_hr"] - claimed_bags_hr
+        ) / claimed_bags_hr < 0.05,
+        "patent_validation_issues": design["validation"],
+    }
+
+
 def water_demand(
     bags_hr: float = 45.0,
     water_qt_per_bag: float = WATER_QT_PER_BAG,
@@ -254,6 +305,19 @@ def main():
           f"→ housing ID ≈ {size['implied_housing_id_in']:.1f}\"")
     print(f"    Repo assumption is {size['assumed_housing_id_in']:.1f}\" (UNMEASURED) — "
           "the claim suggests the real bore is ~6.5\"; verify with a bore gauge")
+
+    converged = converged_design()
+    print("\n[1c] SELF-CONSISTENT DESIGN POINT (fixed-point iteration)")
+    print(f"    Converged in {converged['iterations']} iterations: "
+          f"bore {converged['converged_housing_id_in']:.2f}\", "
+          f"auger OD {converged['auger_od_in']:.2f}\", "
+          f"pitches {converged['pitch_hopper_in']:.2f}\"/"
+          f"{converged['pitch_chute_in']:.2f}\"")
+    print(f"    Predicted throughput {converged['predicted_bags_hr']:.1f} bags/hr "
+          f"vs claimed {converged['claimed_bags_hr']:.0f} → "
+          f"{'SELF-CONSISTENT' if converged['self_consistent'] else 'NOT CONVERGED'}; "
+          f"patent P/D checks: "
+          f"{'PASS' if not converged['patent_validation_issues'] else converged['patent_validation_issues']}")
 
     water = water_demand()
     print("\n[2] WATER MASS BALANCE")
