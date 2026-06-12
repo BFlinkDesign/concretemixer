@@ -1,5 +1,14 @@
 # MudMixer Reverse Engineering Project
 
+![tests](https://github.com/BFlinkDesign/concretemixer/actions/workflows/tests.yml/badge.svg)
+
+> **Automated backend**: every push runs the 99-test suite, validates the
+> full-machine CAD at both design points, regenerates every artifact
+> (STLs, renders, drawings, reports) via `src/build_all.py`, gates the
+> STL files through a file-level manufacturing audit, and uploads the
+> complete CAD package as a build artifact. Nothing in this repo is
+> hand-maintained downstream of the source models.
+
 ## Overview
 
 This project contains reverse-engineered documentation of the MudMixer portable continuous concrete/mortar mixer. The MudMixer is a patented continuous-feed mixing system that uses a shaftless helical auger to hydrate and mix bagged cementitious materials.
