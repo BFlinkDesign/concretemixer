@@ -6,32 +6,37 @@ This module provides computational tools for optimizing the design of a
 shaftless helical auger for continuous concrete mixing.
 
 Usage:
-    python auger_optimizer.py --housing-id 6.0 --torque 95 --aggregate 0.5
+    python auger_optimizer.py --housing-id 6.0 --aggregate 0.5 --duty jobsite_12hr
+    python auger_optimizer.py --housing-id 6.0 --stl auger.stl --render auger.png
 
 Dependencies:
-    - numpy
-    - scipy (optional, for advanced optimization)
-    - matplotlib (optional, for visualization)
+    - none for core calculations and STL export (standard library only)
+    - matplotlib (optional, for --render visualization)
 """
 
+import argparse
 import math
-from dataclasses import dataclass, field
-from typing import Optional, Tuple, List, Dict
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class FingerMaterial(Enum):
     """Available finger materials with mechanical properties."""
-    STEEL_1045 = ("1045 Steel", 12000, 250)           # (name, shear_psi, max_temp_F)
-    STAINLESS_304 = ("304 SS", 10000, 1500)
-    UHMW_STANDARD = ("UHMW-PE", 2000, 180)
-    UHMW_HIGH_TEMP = ("High-Temp UHMW", 1800, 275)
-    PTFE = ("PTFE/Teflon", 600, 500)
+    # (name, shear_psi, max_temp_F, density_lb_in3, specific_heat_btu_lb_f)
+    STEEL_1045 = ("1045 Steel", 12000, 250, 0.284, 0.12)
+    STAINLESS_304 = ("304 SS", 10000, 1500, 0.289, 0.12)
+    UHMW_STANDARD = ("UHMW-PE", 2000, 180, 0.034, 0.55)
+    UHMW_HIGH_TEMP = ("High-Temp UHMW", 1800, 275, 0.034, 0.55)
+    PTFE = ("PTFE/Teflon", 600, 500, 0.078, 0.25)
 
-    def __init__(self, display_name: str, shear_strength_psi: int, max_temp_f: int):
+    def __init__(self, display_name: str, shear_strength_psi: int, max_temp_f: int,
+                 density_lb_in3: float, specific_heat_btu_lb_f: float):
         self.display_name = display_name
         self.shear_strength_psi = shear_strength_psi
         self.max_temp_f = max_temp_f
+        self.density_lb_in3 = density_lb_in3
+        self.specific_heat_btu_lb_f = specific_heat_btu_lb_f
 
 
 class DutyCycle(Enum):
@@ -45,7 +50,7 @@ class DutyCycle(Enum):
 
     def __init__(self, name: str, bags_per_session: int, sessions_per_day: int,
                  runtime_hours: float, cool_down_mins: float):
-        self._name = name
+        self.label = name
         self.bags_per_session = bags_per_session
         self.sessions_per_day = sessions_per_day
         self.runtime_hours = runtime_hours
@@ -92,7 +97,7 @@ class AugerGeometry:
     def pd_ratio_chute(self) -> float:
         return self.pitch_chute / self.outer_diameter
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Validate geometry against patent specifications."""
         issues = []
 
@@ -159,7 +164,7 @@ class AugerOptimizer:
     def __init__(
         self,
         housing_id: float,
-        conditions: Optional[OperatingConditions] = None
+        conditions: OperatingConditions | None = None
     ):
         """
         Initialize optimizer with housing internal diameter.
@@ -172,7 +177,7 @@ class AugerOptimizer:
         self.conditions = conditions or OperatingConditions()
         self.safety_factor = 2.5
 
-    def calculate_clearance(self, auger_od: float) -> Dict[str, float]:
+    def calculate_clearance(self, auger_od: float) -> dict[str, Any]:
         """
         Calculate clearance between auger and housing.
 
@@ -211,7 +216,7 @@ class AugerOptimizer:
 
         return result
 
-    def calculate_finger_shear(self, fingers: FingerConfig) -> Dict[str, any]:
+    def calculate_finger_shear(self, fingers: FingerConfig) -> dict[str, Any]:
         """
         Determine if fingers can shear aggregate based on torque and geometry.
 
@@ -232,33 +237,41 @@ class AugerOptimizer:
         )
         force_per_finger_lbf = force_per_finger
 
+        # Worst case: aggregate jams against a SINGLE finger, which must
+        # react the full motor torque alone (stall condition).
+        jam_force_lbf = self.conditions.motor_torque_ft_lb / avg_radius_ft
+
         # Contact area: finger diameter × aggregate size (worst case)
         contact_area = fingers.diameter * self.conditions.max_aggregate_size
 
         # Pressure on finger
         pressure_psi = force_per_finger_lbf / contact_area
+        jam_pressure_psi = jam_force_lbf / contact_area
 
         # Compare to material shear strength
         material_strength = fingers.material.shear_strength_psi
         design_strength = material_strength / self.safety_factor
 
-        result = {
+        result: dict[str, Any] = {
             "force_per_finger_lbf": force_per_finger_lbf,
+            "jam_force_lbf": jam_force_lbf,
             "contact_area_sq_in": contact_area,
             "pressure_psi": pressure_psi,
+            "jam_pressure_psi": jam_pressure_psi,
             "material": fingers.material.display_name,
             "material_strength_psi": material_strength,
             "design_strength_psi": design_strength,
-            "utilization": pressure_psi / design_strength,
+            "utilization": jam_pressure_psi / design_strength,
         }
 
-        if pressure_psi > design_strength:
+        if jam_pressure_psi > design_strength:
             result["status"] = "FAIL"
             result["recommendation"] = (
-                f"Finger stress {pressure_psi:.0f} psi > allowable {design_strength:.0f} psi. "
-                "Options: increase finger diameter, add more fingers, or use stronger material."
+                f"Single-finger jam stress {jam_pressure_psi:.0f} psi > allowable "
+                f"{design_strength:.0f} psi. A stone wedged against one finger sees full "
+                "motor torque. Options: increase finger diameter or use stronger material."
             )
-        elif pressure_psi < design_strength * 0.3:
+        elif jam_pressure_psi < design_strength * 0.3:
             result["status"] = "OVER-DESIGNED"
             result["recommendation"] = (
                 f"Finger utilization only {result['utilization']*100:.0f}%. "
@@ -270,7 +283,7 @@ class AugerOptimizer:
 
         return result
 
-    def calculate_skeleton_diameter(self) -> Dict[str, float]:
+    def calculate_skeleton_diameter(self) -> dict[str, Any]:
         """
         Calculate minimum stainless steel skeleton wire diameter for torsion.
 
@@ -286,16 +299,18 @@ class AugerOptimizer:
         # τ = 16T / (π × d³)
         # Solving for d: d = ∛(16T / (π × τ_allow))
 
-        # 304 Stainless Steel shear allowable (with safety factor)
+        # 304 Stainless Steel shear allowable (safety factor applied here only)
         ss_shear_ultimate = 31000  # psi
         ss_shear_allow = ss_shear_ultimate / self.safety_factor
 
-        d_cubed = (16 * torque_in_lb * self.safety_factor) / (math.pi * ss_shear_allow)
+        d_cubed = (16 * torque_in_lb) / (math.pi * ss_shear_allow)
         min_diameter = d_cubed ** (1/3)
 
         # Round up to standard wire sizes
-        standard_sizes = [0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75]
-        recommended_size = next((s for s in standard_sizes if s >= min_diameter), standard_sizes[-1])
+        standard_sizes = [0.125, 0.1875, 0.25, 0.3125, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0]
+        recommended_size = next(
+            (s for s in standard_sizes if s >= min_diameter), standard_sizes[-1]
+        )
 
         return {
             "torque_in_lb": torque_in_lb,
@@ -310,7 +325,7 @@ class AugerOptimizer:
         self,
         fingers: FingerConfig,
         runtime_minutes: float = 60
-    ) -> Dict[str, any]:
+    ) -> dict[str, Any]:
         """
         Estimate temperature rise in fingers due to friction.
 
@@ -324,26 +339,24 @@ class AugerOptimizer:
         # Friction power = coefficient × normal force × velocity
         # This is a simplified model
 
-        friction_coeff = 0.3  # Concrete on UHMW estimate
-        avg_radius = self.housing_id / 2 * 0.7
-        velocity = 2 * math.pi * (avg_radius / 12) * self.conditions.motor_rpm / 60  # ft/s
-
         # Assume 10% of motor power goes to finger friction
         friction_power_watts = self.conditions.motor_power_hp * 746 * 0.10
         friction_power_btu_hr = friction_power_watts * 3.412
 
         # Simplified heat rise (very rough estimate)
         # Assumes adiabatic conditions (no cooling)
-        heat_capacity = 0.5  # BTU/(lb·°F) for UHMW
+        heat_capacity = fingers.material.specific_heat_btu_lb_f
         finger_weight_lb = (
             fingers.cross_section_area * fingers.length *
-            0.034 * fingers.count  # UHMW density ~0.034 lb/in³
+            fingers.material.density_lb_in3 * fingers.count
         )
 
-        temp_rise = (friction_power_btu_hr * runtime_minutes / 60) / (finger_weight_lb * heat_capacity)
+        temp_rise = (
+            friction_power_btu_hr * runtime_minutes / 60
+        ) / (finger_weight_lb * heat_capacity)
         final_temp = self.conditions.ambient_temp_f + temp_rise
 
-        result = {
+        result: dict[str, Any] = {
             "friction_power_watts": friction_power_watts,
             "runtime_minutes": runtime_minutes,
             "estimated_temp_rise_f": temp_rise,
@@ -367,7 +380,7 @@ class AugerOptimizer:
     def generate_optimized_design(
         self,
         target_throughput_bags_hr: float = 45
-    ) -> Dict[str, any]:
+    ) -> dict[str, Any]:
         """
         Generate an optimized auger design based on constraints.
 
@@ -441,6 +454,10 @@ class AugerOptimizer:
                 "thermal": thermal,
             },
             "validation": geometry.validate(),
+            "objects": {
+                "geometry": geometry,
+                "fingers": fingers,
+            },
         }
 
 
@@ -481,7 +498,7 @@ class PowerSystem:
         """Current at 24V DC bus (amps)."""
         return self.total_power_draw / self.system_voltage
 
-    def calculate_ac_specs(self) -> Dict[str, float]:
+    def calculate_ac_specs(self) -> dict[str, float]:
         """Calculate AC power requirements."""
         return {
             "input_voltage": 120,
@@ -497,7 +514,7 @@ class PowerSystem:
         battery_model: str = "DCB612",
         count: int = 1,
         series: bool = False
-    ) -> Dict[str, any]:
+    ) -> dict[str, Any]:
         """
         Calculate runtime for DeWalt FlexVolt battery configuration.
 
@@ -547,7 +564,7 @@ class PowerSystem:
             "recommended_dc_dc": f"{voltage}V to 24V @ {self.current_draw_24v:.0f}A",
         }
 
-    def generate_power_system_bom(self) -> List[Dict[str, any]]:
+    def generate_power_system_bom(self) -> list[dict[str, Any]]:
         """Generate bill of materials for dual power system."""
         ac_specs = self.calculate_ac_specs()
 
@@ -667,7 +684,7 @@ class ThermalAnalyzer:
         surface_area_in2: float,
         runtime_hours: float,
         convection_coeff: float = 2.0,  # BTU/(hr·ft²·°F), natural convection
-    ) -> Dict[str, any]:
+    ) -> dict[str, Any]:
         """
         Calculate steady-state temperature for continuous operation.
 
@@ -727,7 +744,7 @@ class ThermalAnalyzer:
         duty_cycle: DutyCycle,
         finger_mass_lb: float = 0.5,
         finger_surface_in2: float = 10.0,
-    ) -> Dict[str, any]:
+    ) -> dict[str, Any]:
         """
         Recommend finger material based on duty cycle thermal requirements.
         """
@@ -778,7 +795,7 @@ class ThermalAnalyzer:
             reason = "Standard UHMW adequate for light duty"
 
         return {
-            "duty_cycle": duty_cycle._name,
+            "duty_cycle": duty_cycle.label,
             "thermal_severity": severity,
             "runtime_hours": runtime,
             "recommended_material": recommended,
@@ -831,7 +848,7 @@ class CFDParameters:
         base_viscosity = 30  # Pa·s at w/c = 0.5
         return base_viscosity * (0.5 / self.wc_ratio) ** 1.5
 
-    def generate_cfd_setup(self) -> Dict[str, any]:
+    def generate_cfd_setup(self) -> dict[str, Any]:
         """Generate CFD simulation parameters."""
         return {
             "material_model": "Bingham Plastic",
@@ -869,33 +886,61 @@ class CFDParameters:
         }
 
 
-def main():
-    """Example usage of the optimizer with 12-hour jobsite duty cycle."""
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments for the design framework."""
+    parser = argparse.ArgumentParser(
+        description="MudMixer shaftless auger generative design framework",
+    )
+    parser.add_argument("--housing-id", type=float, default=6.0,
+                        help="Chute housing internal diameter, inches (default: 6.0, ASSUMED)")
+    parser.add_argument("--hp", type=float, default=0.5,
+                        help="Motor power, HP (default: 0.5)")
+    parser.add_argument("--rpm", type=float, default=27.0,
+                        help="Auger speed, RPM (default: 27)")
+    parser.add_argument("--aggregate", type=float, default=0.5,
+                        help="Max aggregate size, inches (default: 0.5, CONFIRMED)")
+    parser.add_argument("--ambient", type=float, default=95.0,
+                        help="Ambient temperature, °F (default: 95, hot jobsite)")
+    parser.add_argument("--duty", choices=[d.label for d in DutyCycle],
+                        default="jobsite_12hr",
+                        help="Duty cycle (default: jobsite_12hr)")
+    parser.add_argument("--stl", metavar="PATH",
+                        help="Export optimized auger as binary STL to PATH")
+    parser.add_argument("--render", metavar="PATH",
+                        help="Render 3D preview PNG to PATH (requires matplotlib)")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None):
+    """Run the full design study from command-line arguments."""
+    args = parse_args(argv)
+
     print("=" * 70)
     print("MudMixer Generative Design Framework")
     print("OPTIMIZED FOR 12-HOUR JOBSITE CONTINUOUS OPERATION")
     print("=" * 70)
     print()
 
-    # Initialize with known/assumed housing ID
-    housing_id = 6.0  # inches (ASSUMED - needs measurement)
+    housing_id = args.housing_id  # inches (ASSUMED - needs measurement)
+    duty_cycle = next(d for d in DutyCycle if d.label == args.duty)
 
-    # NEW: 12-hour continuous duty cycle
     conditions = OperatingConditions(
-        motor_power_hp=0.5,
-        motor_rpm=27,
-        max_aggregate_size=0.5,  # CONFIRMED
-        duty_cycle=DutyCycle.JOBSITE_12HR,  # 12+ hours continuous
-        ambient_temp_f=95.0,  # Hot jobsite conditions
+        motor_power_hp=args.hp,
+        motor_rpm=args.rpm,
+        max_aggregate_size=args.aggregate,
+        duty_cycle=duty_cycle,
+        ambient_temp_f=args.ambient,
     )
 
     optimizer = AugerOptimizer(housing_id, conditions)
 
     print(f"Housing Internal Diameter: {housing_id}\" (ASSUMED)")
     print(f"Motor: {conditions.motor_power_hp} HP @ {conditions.motor_rpm} RPM")
-    print(f"Torque: {conditions.motor_torque_ft_lb:.1f} ft-lb ({conditions.motor_torque_nm:.1f} N·m)")
+    print(f"Torque: {conditions.motor_torque_ft_lb:.1f} ft-lb "
+          f"({conditions.motor_torque_nm:.1f} N·m)")
     print(f"Max Aggregate: {conditions.max_aggregate_size}\" (CONFIRMED)")
-    print(f"Duty Cycle: {conditions.duty_cycle._name} ({conditions.duty_cycle.runtime_hours} hours)")
+    print(f"Duty Cycle: {conditions.duty_cycle.label} "
+          f"({conditions.duty_cycle.runtime_hours} hours)")
     print(f"Thermal Severity: {conditions.duty_cycle.thermal_severity}")
     print()
 
@@ -932,14 +977,14 @@ def main():
     print("=" * 70)
 
     thermal_analyzer = ThermalAnalyzer(
-        motor_power_hp=0.5,
-        ambient_temp_f=95.0,  # Hot jobsite
+        motor_power_hp=conditions.motor_power_hp,
+        ambient_temp_f=conditions.ambient_temp_f,
         friction_loss_pct=0.15,
     )
 
-    # Get material recommendation for 12-hour duty
+    # Get material recommendation for the selected duty cycle
     material_rec = thermal_analyzer.recommend_finger_material(
-        duty_cycle=DutyCycle.JOBSITE_12HR,
+        duty_cycle=duty_cycle,
         finger_mass_lb=0.5,
         finger_surface_in2=10.0,
     )
@@ -958,7 +1003,10 @@ def main():
     print("DUAL POWER SYSTEM")
     print("=" * 70)
 
-    power = PowerSystem(motor_power_watts=373, system_voltage=24.0)
+    power = PowerSystem(
+        motor_power_watts=conditions.motor_power_hp * 746,
+        system_voltage=24.0,
+    )
 
     # AC specifications
     ac_specs = power.calculate_ac_specs()
@@ -967,7 +1015,7 @@ def main():
     print(f"    Input current: {ac_specs['input_current']:.1f} A")
     print(f"    Power draw: {ac_specs['power_watts']:.0f} W")
     print(f"    PSU rating: {ac_specs['psu_rating_watts']:.0f} W (with headroom)")
-    print(f"    Runtime: UNLIMITED (continuous)")
+    print("    Runtime: UNLIMITED (continuous)")
 
     # Battery configurations
     print()
@@ -978,7 +1026,8 @@ def main():
         # Single battery
         single = power.calculate_battery_runtime(battery, count=1)
         print(f"    {single['configuration']}:")
-        print(f"      Runtime: {single['runtime_minutes']:.0f} min ({single['runtime_hours']:.2f} hr)")
+        print(f"      Runtime: {single['runtime_minutes']:.0f} min "
+              f"({single['runtime_hours']:.2f} hr)")
         print(f"      Bags: ~{single['bags_estimate']}")
 
     print()
@@ -1031,6 +1080,20 @@ def main():
      - 0.5 HP marginal for 12-hour operation
      - Higher power allows lower duty cycle per bag
 """)
+
+    if args.stl or args.render:
+        from auger_cad import build_auger_mesh, render_mesh, write_binary_stl
+
+        mesh = build_auger_mesh(
+            design["objects"]["geometry"],
+            design["objects"]["fingers"],
+        )
+        if args.stl:
+            write_binary_stl(mesh, args.stl)
+            print(f"STL exported: {args.stl} ({len(mesh)} triangles)")
+        if args.render:
+            render_mesh(mesh, args.render)
+            print(f"Render saved: {args.render}")
 
 
 if __name__ == "__main__":

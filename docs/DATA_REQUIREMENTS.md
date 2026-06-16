@@ -30,8 +30,13 @@ This document identifies the **KNOWN** specifications from public sources vs **U
 | Motor Power | 0.5 HP (373 W) | MudMixer Specs | ★★★★★ |
 | Motor Type | DC (water-sealed) | Patent 10,259,140 | ★★★★☆ |
 | Input Voltage | 120V AC | MudMixer Specs | ★★★★★ |
-| Current Draw | 2.6 A | MudMixer Specs | ★★★★★ |
+| Current Draw | 2.6 A | MudMixer Specs | ★★☆☆☆ ¹ |
 | Power Supply | AC-DC Transformer | Patent 10,259,140 | ★★★★☆ |
+
+> ¹ **Confidence downgraded by analysis** ([DESIGN_INSIGHTS.md](./DESIGN_INSIGHTS.md) D2):
+> 2.6 A × 120 V = 312 W input cannot continuously produce the rated 373 W
+> (0.5 HP) output. Full-load draw is ~4.1 A at realistic drive efficiency;
+> size circuits and generators accordingly.
 
 ### 1.4 Motor Shaft Interface ⚠️ CRITICAL FINDING
 | Parameter | Value | Source | Confidence |
@@ -85,11 +90,18 @@ This document identifies the **KNOWN** specifications from public sources vs **U
 ## 2. UNKNOWN SPECIFICATIONS (Critical Gaps)
 
 ### 2.1 Auger Housing Interface ⛔ BLOCKING
-| Parameter | Needed For | Impact Level |
-|-----------|------------|--------------|
-| **Housing Internal Diameter (ID)** | Clearance calculation, CFD | ⛔ CRITICAL |
-| **Auger Outer Diameter (OD)** | Clearance calculation | ⛔ CRITICAL |
-| **Clearance Gap** | Flow analysis, aggregate jamming | ⛔ CRITICAL |
+| Parameter | Needed For | Impact Level | Computed Prediction |
+|-----------|------------|--------------|---------------------|
+| **Housing Internal Diameter (ID)** | Clearance calculation, CFD | ⛔ CRITICAL | **~6.5"** ² |
+| **Auger Outer Diameter (OD)** | Clearance calculation | ⛔ CRITICAL | **~5.0"** ² |
+| **Clearance Gap** | Flow analysis, aggregate jamming | ⛔ CRITICAL | ~0.75"/side ² |
+
+> ² **Falsifiable prediction** ([DESIGN_INSIGHTS.md](./DESIGN_INSIGHTS.md)
+> D1/D11): inverting the claimed 45 bags/hr throughput through the
+> screw-conveyor flow equation at CEMA mid-range fill efficiency converges
+> to a 6.48" bore — the only size at which the published performance and
+> the patent P/D constraints agree. The bore-gauge measurement below
+> should confirm or refute this before fabrication.
 
 **Why Critical**:
 - Gap too small (<2mm): Friction, heat buildup, finger wear

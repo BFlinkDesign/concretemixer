@@ -1,5 +1,14 @@
 # MudMixer Reverse Engineering Project
 
+![tests](https://github.com/BFlinkDesign/concretemixer/actions/workflows/tests.yml/badge.svg)
+
+> **Automated backend**: every push runs the 99-test suite, validates the
+> full-machine CAD at both design points, regenerates every artifact
+> (STLs, renders, drawings, reports) via `src/build_all.py`, gates the
+> STL files through a file-level manufacturing audit, and uploads the
+> complete CAD package as a build artifact. Nothing in this repo is
+> hand-maintained downstream of the source models.
+
 ## Overview
 
 This project contains reverse-engineered documentation of the MudMixer portable continuous concrete/mortar mixer. The MudMixer is a patented continuous-feed mixing system that uses a shaftless helical auger to hydrate and mix bagged cementitious materials.
@@ -42,15 +51,57 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - [Bill of Materials](./docs/BOM.md) - Component list for replication
 - [Engineering Calculations](./docs/ENGINEERING.md) - Design calculations and principles
 - [**Data Requirements**](./docs/DATA_REQUIREMENTS.md) - ⚠️ Known vs unknown specs, critical gaps
+- [**Design Insights**](./docs/DESIGN_INSIGHTS.md) - 🔬 Computed discoveries (implied 6.5" bore, spec inconsistencies) and enhancement roadmap
 
 ### Technical Drawings (`drawings/`)
 - [Assembly Drawing](./drawings/ASSEMBLY_DRAWING.md) - Side/front/top views
 - [Auger Drawing](./drawings/AUGER_DRAWING.md) - Shaftless auger geometry
 - [Electrical Schematic](./drawings/ELECTRICAL_SCHEMATIC.md) - Drive system wiring
+- [Auger 3D Render](./drawings/AUGER_RENDER.png) - Generated from `src/auger_cad.py`
+- [Full Machine Render](./drawings/MIXER_ASSEMBLY_RENDER.png) - Four-view assembly sheet
+- [Exploded View](./drawings/MIXER_EXPLODED_RENDER.png) - Component breakdown
+- [General Arrangement Drawing](./drawings/MIXER_DRAWING_SHEET.png) - Dimensioned elevations
+- [12-Hour Simulation](./drawings/SIMULATION_12HR.png) - Operational digital twin timeline
 
 ### Computational Tools (`src/`)
-- [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework
-- [requirements.txt](./src/requirements.txt) - Python dependencies
+- [auger_optimizer.py](./src/auger_optimizer.py) - Generative design framework (CLI)
+- [auger_cad.py](./src/auger_cad.py) - Auger mesh generation, STL export, rendering
+- [mixer_cad.py](./src/mixer_cad.py) - **Full-machine parametric CAD** with validated mass, CG, stability, clearances + dimensioned drawing sheet
+- [mixer_analysis.py](./src/mixer_analysis.py) - Cross-specification physics analysis + self-consistent design point
+- [mixer_simulation.py](./src/mixer_simulation.py) - **12-hour duty-cycle digital twin** (feed, thermal, electrical)
+- [bom_generator.py](./src/bom_generator.py) - **CAD-reconciled BOM + procurement audit** (caught 3 errors in the hand-written BOM, see D14)
+- [manufacturing_audit.py](./src/manufacturing_audit.py) - File-level STL verification gate
+- [build_all.py](./src/build_all.py) - One-command regeneration of every artifact
+- [requirements.txt](./src/requirements.txt) - Python dependencies (core is stdlib-only)
+
+```bash
+# Full design study for 12-hour jobsite duty:
+python src/auger_optimizer.py --housing-id 6.0 --duty jobsite_12hr
+
+# Export the optimized auger as a 3D-printable STL plus a preview render:
+python src/auger_optimizer.py --stl auger.stl --render auger.png
+
+# Build and validate the COMPLETE machine, export per-component STLs:
+python src/mixer_cad.py --report --stl-dir cad_out --render assembly.png --exploded exploded.png
+
+# Cross-specification discovery analysis (implied bore size, power audit...):
+python src/mixer_analysis.py
+
+# Simulate a full 12-hour jobsite day (bags, water, energy, temperatures):
+python src/mixer_simulation.py --plot simulation.png
+
+# Generate the dimensioned general-arrangement drawing:
+python src/mixer_cad.py --drawing drawing_sheet.png
+
+# Run the test suite (requires pytest):
+python -m pytest src/
+```
+
+![Full machine assembly](./drawings/MIXER_ASSEMBLY_RENDER.png)
+
+![Exploded view](./drawings/MIXER_EXPLODED_RENDER.png)
+
+![Auger render](./drawings/AUGER_RENDER.png)
 
 ## Operation Principle
 

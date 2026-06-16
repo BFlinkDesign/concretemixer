@@ -177,31 +177,50 @@ Maximum load scenario:
 - Machine weight: 145 lbs
 - **Total: ~495 lbs**
 
-### Wheel Axle Stress
+### Wheel Axle Stress (REVISED — see DESIGN_INSIGHTS.md D13)
+
+> An earlier revision modeled the axle as carrying 100% of machine
+> weight on a 6" moment arm, predicting 61,875 psi and recommending a
+> 3/4" hardened axle. Both load-path assumptions were wrong: the CAD
+> mass model shows the wheels carry ~59% of weight when parked (support
+> legs take the rest), and the bending arm is the bracket-to-wheel
+> offset (~2"), not half the axle span. The production machine's 5/8"
+> axle is consistent with the corrected analysis below.
 
 ```
-Load per wheel = 495 / 2 = 247.5 lbs
+Parked, fully loaded (495 lb): wheels carry ~59% → 146 lb per wheel
+Rolling worst case (legs lifted, handle carries ~95 lb):
+  wheels carry ~400 lb → 200 lb per wheel
 
-For 5/8" steel axle:
-  Moment = 247.5 × 6" (half span) = 1485 in-lb
-  Section modulus = (π × d³) / 32 = (π × 0.625³) / 32 = 0.024 in³
-  Bending stress = M / S = 1485 / 0.024 = 61,875 psi
+For 5/8" steel axle, wheel center ~2" outboard of bracket:
+  Moment = 200 × 2" = 400 in-lb
+  Section modulus = (π × d³) / 32 = 0.024 in³
+  Bending stress = 400 / 0.024 = 16,700 psi
 
-Steel yield strength: ~36,000 psi (mild steel)
+Mild steel yield ~36,000 psi → SF = 2.2
+1018 cold-rolled (~54,000 psi) → SF = 3.2
 ```
 
-**Result: Need hardened axle or larger diameter (3/4" recommended)**
+**Result: 5/8" axle is adequate (SF ≥ 2.2); use 1018 CR or better to
+meet the 2.5 impact-loading safety factor. Keep wheel hubs within ~2.5"
+of the brackets — the margin is geometric, not material.**
 
-### Frame Tube Analysis
+### Frame Tube Analysis (REVISED — see DESIGN_INSIGHTS.md D13)
 
-For 1" OD, 16 ga (0.065" wall) steel tube:
-- Moment of inertia: 0.034 in⁴
-- Section modulus: 0.068 in³
-- Maximum bending stress at 500 lb central load:
-  - Assuming 24" span: M = 500 × 24 / 4 = 3000 in-lb
-  - Stress = 3000 / 0.068 = 44,117 psi
+> An earlier revision applied the full 500 lb as a point load at
+> mid-span of a single tube, computing 44,117 psi — above yield — yet
+> concluded "adequate." Corrected: the load is shared by two rails and
+> distributed by the hopper/body footprint.
 
-**Adequate with safety factor for static loads**
+For 1" OD, 16 ga (0.065" wall) steel tube, two rails:
+- Section modulus: 0.068 in³ per rail
+- Distributed load per rail: 495 / 2 ≈ 248 lb over the 24" support span
+  - M = wL/8 = 248 × 24 / 8 = 744 in-lb
+  - Stress = 744 / 0.068 = 10,900 psi → **SF ≈ 3.3 vs yield**
+- If built from true 1" schedule-40 pipe (1.315" OD, S = 0.133 in³)
+  per SPECIFICATIONS.md: stress = 5,600 psi → **SF ≈ 6.4**
+
+**Adequate: SF ≥ 3.3 distributed-load static, both section assumptions**
 
 ---
 

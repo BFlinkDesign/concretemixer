@@ -1,0 +1,42 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install pytest matplotlib ruff mypy
+      - name: Lint (ruff)
+        run: ruff check src/
+      - name: Type check (mypy)
+        run: mypy
+      - name: Run test suite
+        run: python -m pytest src/ -q
+      - name: Full-machine CAD validation (baseline 6.0" bore)
+        run: python src/mixer_cad.py --report
+      - name: Full-machine CAD validation (converged 6.5" bore)
+        run: python src/mixer_cad.py --housing-id 6.5 --report
+      - name: Cross-specification analysis
+        run: python src/mixer_analysis.py
+      - name: 12-hour duty-cycle simulation
+        run: python src/mixer_simulation.py
+      - name: Automated build (all artifacts, self-gating)
+        run: cd src && python build_all.py --out ../dist
+      - name: Manufacturing audit (file-level STL verification)
+        run: |
+          python src/manufacturing_audit.py dist/stl \
+            dist/stl/baseline_6.0in dist/stl/converged_6.5in
+      - name: Upload CAD package
+        uses: actions/upload-artifact@v4
+        with:
+          name: mudmixer-cad-package
+          path: dist/
+          retention-days: 30

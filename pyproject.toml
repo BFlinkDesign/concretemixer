@@ -1,0 +1,37 @@
+[project]
+name = "mudmixer-engineering"
+version = "1.0.0"
+description = "MudMixer reverse-engineering computational framework: generative design, CAD, simulation, procurement"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E741",  # ambiguous single-letter names are fine in math contexts
+]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+files = ["src"]
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+no_implicit_optional = true
+ignore_missing_imports = true   # matplotlib has no bundled stubs
+
+[tool.pytest.ini_options]
+testpaths = ["src"]
