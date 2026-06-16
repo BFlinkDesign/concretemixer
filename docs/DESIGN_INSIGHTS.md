@@ -7,7 +7,7 @@ not from any single source. Every number below is reproducible:
 ```bash
 python src/mixer_analysis.py        # cross-specification analysis
 python src/mixer_cad.py --report    # full-machine CAD validation
-python -m pytest src/               # 60-test verification suite
+python -m pytest src/               # 108-test verification suite
 ```
 
 ---
