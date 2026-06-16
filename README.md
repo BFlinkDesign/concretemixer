@@ -2,12 +2,18 @@
 
 ![tests](https://github.com/BFlinkDesign/concretemixer/actions/workflows/tests.yml/badge.svg)
 
-> **Automated backend**: every push runs the 99-test suite, validates the
-> full-machine CAD at both design points, regenerates every artifact
-> (STLs, renders, drawings, reports) via `src/build_all.py`, gates the
-> STL files through a file-level manufacturing audit, and uploads the
-> complete CAD package as a build artifact. Nothing in this repo is
-> hand-maintained downstream of the source models.
+> **Automated backend**: every push runs lint (ruff) + type check (mypy) +
+> the 108-test suite, validates the full-machine CAD at both design points,
+> regenerates every artifact (STLs, renders, drawings, reports) via
+> `src/build_all.py`, gates the STL files through a file-level
+> manufacturing audit, and uploads the complete CAD package as a build
+> artifact. Nothing in this repo is hand-maintained downstream of the
+> source models.
+>
+> New here? Start with [`CLAUDE.md`](./CLAUDE.md) (repo guide) and
+> [`docs/NEXT_STEPS.md`](./docs/NEXT_STEPS.md) (outstanding work). The one
+> measurement that gates fabrication is the chute bore — the model predicts
+> **6.48"**.
 
 ## Overview
 
@@ -51,7 +57,8 @@ This project contains reverse-engineered documentation of the MudMixer portable 
 - [Bill of Materials](./docs/BOM.md) - Component list for replication
 - [Engineering Calculations](./docs/ENGINEERING.md) - Design calculations and principles
 - [**Data Requirements**](./docs/DATA_REQUIREMENTS.md) - ⚠️ Known vs unknown specs, critical gaps
-- [**Design Insights**](./docs/DESIGN_INSIGHTS.md) - 🔬 Computed discoveries (implied 6.5" bore, spec inconsistencies) and enhancement roadmap
+- [**Design Insights**](./docs/DESIGN_INSIGHTS.md) - 🔬 Computed discoveries D1-D14 (implied 6.5" bore, spec inconsistencies) and enhancement roadmap E1-E7
+- [**Next Steps**](./docs/NEXT_STEPS.md) - ✅ TODO: physical measurements, CFD, enhancement roadmap
 
 ### Technical Drawings (`drawings/`)
 - [Assembly Drawing](./drawings/ASSEMBLY_DRAWING.md) - Side/front/top views
