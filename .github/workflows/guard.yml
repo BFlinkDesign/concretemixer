@@ -4,14 +4,14 @@ name: guard
 
 on:
   push:
-    branches: [claude/reverse-engineer-mudmixer-NWWzn]
+    branches: [main]
   delete:
 
 jobs:
   guard:
     uses: BFlinkDesign/dev-setup/.github/workflows/guard-main.yml@main
     with:
-      protected_branch: claude/reverse-engineer-mudmixer-NWWzn
+      protected_branch: main
     permissions:
       contents: read
       issues: write
