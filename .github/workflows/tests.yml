@@ -8,8 +8,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -35,7 +35,7 @@ jobs:
           python src/manufacturing_audit.py dist/stl \
             dist/stl/baseline_6.0in dist/stl/converged_6.5in
       - name: Upload CAD package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mudmixer-cad-package
           path: dist/
